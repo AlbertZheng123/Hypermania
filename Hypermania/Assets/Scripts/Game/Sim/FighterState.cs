@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using Design;
 using Design.Animation;
 using MemoryPack;
@@ -15,6 +16,12 @@ namespace Game.Sim
         Hitstun,
         Blockstun,
         Knockdown,
+    }
+
+    public enum FighterFacing
+    {
+        Left,
+        Right,
     }
 
     public enum FighterLocation
@@ -38,6 +45,7 @@ namespace Game.Sim
     {
         public Vector2 Position;
         public Vector2 Velocity;
+        public float Health;
 
         public FighterAttackType AttackType;
 
@@ -62,7 +70,7 @@ namespace Game.Sim
         /// </summary>
         public int ModeT;
 
-        public Vector2 FacingDirection;
+        public FighterFacing FacingDir;
 
         [MemoryPackIgnore]
         public FighterLocation Location
@@ -79,15 +87,17 @@ namespace Game.Sim
         public FighterLocation LastLocation;
         public Frame LocationSt { get; private set; }
 
-        public static FighterState Create(Vector2 position, Vector2 facingDirection, CharacterConfig characterConfig)
+        public static FighterState Create(Vector2 position, FighterFacing facingDirection)
         {
             FighterState state = new FighterState();
             state.Position = position;
             state.Velocity = Vector2.zero;
             state.Mode = FighterMode.Neutral;
+            // TODO: character dependent?
+            state.Health = 100;
             state.ModeT = int.MaxValue;
             state.AttackType = FighterAttackType.Invalid;
-            state.FacingDirection = facingDirection;
+            state.FacingDir = facingDirection;
             state.AnimState = CharacterAnimation.Idle;
             state.AnimSt = Frame.FirstFrame;
             return state;
@@ -152,11 +162,11 @@ namespace Game.Sim
             // Apply gravity if not grounded
             if (Position.y > Globals.GROUND || Velocity.y > 0)
             {
-                Velocity.y += Globals.GRAVITY * 1 / 60;
+                Velocity.y += Globals.GRAVITY * 1 / 64;
             }
 
             // Update Position
-            Position += Velocity * 1 / 60;
+            Position += Velocity * 1 / 64;
 
             // Floor collision
             if (Position.y <= Globals.GROUND)
@@ -166,9 +176,21 @@ namespace Game.Sim
                 if (Velocity.y < 0)
                     Velocity.y = 0;
             }
+            if (Position.x >= Globals.WALLS)
+            {
+                Position.x = Globals.WALLS;
+                if (Velocity.x > 0)
+                    Velocity.x = 0;
+            }
+            if (Position.x <= -Globals.WALLS)
+            {
+                Position.x = -Globals.WALLS;
+                if (Velocity.x < 0)
+                    Velocity.x = 0;
+            }
         }
 
-        public void PlaceBoxes(Frame frame, CharacterConfig config)
+        public void AddBoxes(Frame frame, CharacterConfig config, Physics<BoxProps> physics, int handle)
         {
             int tick = frame - AnimSt;
             FrameData frameData = config.GetFrameData(AnimState, tick);
@@ -176,9 +198,33 @@ namespace Game.Sim
             foreach (var box in frameData.Boxes)
             {
                 Vector2 centerLocal = box.CenterLocal;
+                if (FacingDir == FighterFacing.Left)
+                {
+                    centerLocal.x *= -1;
+                }
                 Vector2 sizeLocal = box.SizeLocal;
                 Vector2 centerWorld = Position + centerLocal;
+                physics.AddBox(handle, centerWorld, sizeLocal, box.Props);
             }
+        }
+
+        public void ApplyHit(BoxProps props)
+        {
+            Mode = FighterMode.Hitstun;
+            // We add + 1 here: ApplyHit is called after applying inputs but before ticking the state machine. If
+            // hitStun = 1, that means we would immediately make the player actionable next frame, so we additionally
+            // add 1. See the docs on ModeT for details.
+            ModeT = props.HitstunTicks + 1;
+            Health -= props.Damage;
+
+            Velocity = props.Knockback;
+        }
+
+        public void ApplyClank()
+        {
+            Mode = FighterMode.Hitstun;
+            ModeT = 10;
+            Velocity = Vector2.zero;
         }
 
         public CharacterAnimation CalculateSetAnimationState(Frame frame)
@@ -191,14 +237,13 @@ namespace Game.Sim
                     newAnim = CharacterAnimation.LightAttack;
                 }
             }
-
-            if (Mode == FighterMode.Neutral)
+            else if (Mode == FighterMode.Neutral)
             {
                 if (Location == FighterLocation.Airborne)
                 {
                     newAnim = CharacterAnimation.Jump;
                 }
-                if (Velocity.magnitude > 0.01f)
+                else if (Velocity.magnitude > 0.01f)
                 {
                     newAnim = CharacterAnimation.Walk;
                 }

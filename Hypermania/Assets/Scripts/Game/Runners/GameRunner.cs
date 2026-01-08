@@ -8,7 +8,7 @@ using Netcode.Rollback;
 using Steamworks;
 using UnityEngine;
 
-namespace Game
+namespace Game.Runners
 {
     public abstract class GameRunner : MonoBehaviour
     {
@@ -25,6 +25,7 @@ namespace Game
         /// The current state of the runner. If you derive from this class, it must be initialized on Init();
         /// </summary>
         protected GameState _curState;
+        protected GameState.GameStateCache _cache;
 
         /// <summary>
         /// The characters of each player. _characters[i] should represent the chararcter being played by handle i. If
@@ -37,7 +38,7 @@ namespace Game
             P2PClient client
         );
         public abstract void Poll(float deltaTime);
-        public abstract void Stop();
+        public abstract void DeInit();
 
         public void OnDrawGizmos()
         {

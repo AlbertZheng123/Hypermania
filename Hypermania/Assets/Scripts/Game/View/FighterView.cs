@@ -12,6 +12,7 @@ namespace Game.View
         private Animator _animator;
         private SpriteRenderer _spriteRenderer;
         private CharacterConfig _characterConfig;
+        private RuntimeAnimatorController _oldController;
 
         private void Awake()
         {
@@ -24,6 +25,7 @@ namespace Game.View
         public void Init(CharacterConfig characterConfig)
         {
             _characterConfig = characterConfig;
+            _oldController = _animator.runtimeAnimatorController;
             _animator.runtimeAnimatorController = characterConfig.AnimationController;
         }
 
@@ -34,7 +36,7 @@ namespace Game.View
             pos.y = state.Position.y;
             transform.position = pos;
 
-            _spriteRenderer.flipX = state.FacingDirection.x < 0f;
+            _spriteRenderer.flipX = state.FacingDir == FighterFacing.Left;
 
             CharacterAnimation animation = state.AnimState;
             int totalTicks = _characterConfig.GetHitboxData(animation).TotalTicks;
@@ -45,6 +47,13 @@ namespace Game.View
 
             _animator.Play(animation.ToString(), 0, (float)ticks / totalTicks);
             _animator.Update(0f); // force pose evaluation this frame while paused
+        }
+
+        public void DeInit()
+        {
+            _animator.runtimeAnimatorController = _oldController;
+            _oldController = null;
+            _characterConfig = null;
         }
     }
 }

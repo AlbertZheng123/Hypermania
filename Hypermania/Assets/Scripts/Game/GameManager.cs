@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Game.View;
+using Game.Runners;
 using Netcode.P2P;
 using Netcode.Rollback;
 using Steamworks;
@@ -107,12 +107,13 @@ namespace Game
             }
             _players.Clear();
             _players.Add((new PlayerHandle(0), PlayerKind.Local, default));
+            _players.Add((new PlayerHandle(1), PlayerKind.Local, default));
             OnAllPeersConnected();
         }
 
         public void StopGame()
         {
-            Runner.Stop();
+            Runner.DeInit();
         }
 
         #endregion
@@ -159,7 +160,7 @@ namespace Game
 
         void OnPeerDisconnected(SteamNetworkingIdentity id)
         {
-            Runner.Stop();
+            Runner.DeInit();
         }
 
         void Update()

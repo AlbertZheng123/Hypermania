@@ -17,8 +17,6 @@ namespace Design.Animation.Editors
 
         public bool HasUnsavedChanges => _hasUnsavedChanges;
 
-        public event Action Changed;
-
         public bool HasAllInputs => CharacterPrefab && Clip && Data;
         public int TotalTicks => Data ? Mathf.Max(1, Data.TotalTicks) : 1;
 

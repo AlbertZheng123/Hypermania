@@ -6,9 +6,8 @@ using Netcode.P2P;
 using Netcode.Rollback;
 using Netcode.Rollback.Sessions;
 using Steamworks;
-using UnityEngine;
 
-namespace Game
+namespace Game.Runners
 {
     public class SingleplayerRunner : GameRunner
     {
@@ -50,7 +49,7 @@ namespace Game
                 _characters[i] = sampleConfig;
             }
 
-            _curState = GameState.Create(_characters);
+            (_curState, _cache) = GameState.Create(_characters);
             SessionBuilder<GameInput, SteamNetworkingIdentity> builder = new SessionBuilder<
                 GameInput,
                 SteamNetworkingIdentity
@@ -74,9 +73,9 @@ namespace Game
             _initialized = true;
         }
 
-        public override void Stop()
+        public override void DeInit()
         {
-            OnDisable();
+            // TODO
         }
 
         public override void Poll(float deltaTime)
@@ -106,6 +105,7 @@ namespace Game
             }
 
             _session.AddLocalInput(new PlayerHandle(0), _inputBuffer.Consume());
+            _session.AddLocalInput(new PlayerHandle(1), new GameInput(InputFlags.None));
             List<RollbackRequest<GameState, GameInput>> requests = _session.AdvanceFrame();
             foreach (RollbackRequest<GameState, GameInput> request in requests)
             {
@@ -120,7 +120,7 @@ namespace Game
                         loadReq.Cell.Load(out _curState);
                         break;
                     case RollbackRequestKind.AdvanceFrameReq:
-                        _curState.Advance(request.GetAdvanceFrameRequest().Inputs, _characters);
+                        _curState.Advance(request.GetAdvanceFrameRequest().Inputs, _characters, _cache);
                         break;
                 }
             }

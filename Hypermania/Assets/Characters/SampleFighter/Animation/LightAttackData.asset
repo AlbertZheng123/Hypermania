@@ -32,7 +32,7 @@ MonoBehaviour:
         Damage: 0
         HitstunTicks: 12
         BlockstunTicks: 0
-        Knockback: {x: 0, y: 0}
+        Knockback: {x: 8, y: 6}
   - Boxes:
     - Name: Hurt
       CenterLocal: {x: -0.25247526, y: 0.000000059604645}
@@ -51,7 +51,7 @@ MonoBehaviour:
         Damage: 0
         HitstunTicks: 12
         BlockstunTicks: 0
-        Knockback: {x: 0, y: 0}
+        Knockback: {x: 8, y: 6}
   - Boxes:
     - Name: Hurt
       CenterLocal: {x: -0.25247526, y: 0.000000059604645}
@@ -70,7 +70,7 @@ MonoBehaviour:
         Damage: 0
         HitstunTicks: 12
         BlockstunTicks: 0
-        Knockback: {x: 0, y: 0}
+        Knockback: {x: 8, y: 6}
   - Boxes:
     - Name: Hurt
       CenterLocal: {x: -0.25247526, y: 0.000000059604645}
@@ -89,7 +89,7 @@ MonoBehaviour:
         Damage: 0
         HitstunTicks: 12
         BlockstunTicks: 0
-        Knockback: {x: 0, y: 0}
+        Knockback: {x: 8, y: 6}
   - Boxes:
     - Name: Hurt
       CenterLocal: {x: -0.25247526, y: 0.000000059604645}
@@ -108,7 +108,7 @@ MonoBehaviour:
         Damage: 0
         HitstunTicks: 12
         BlockstunTicks: 0
-        Knockback: {x: 0, y: 0}
+        Knockback: {x: 8, y: 6}
   - Boxes:
     - Name: Hurt
       CenterLocal: {x: -0.25247526, y: 0.000000059604645}
@@ -127,7 +127,7 @@ MonoBehaviour:
         Damage: 0
         HitstunTicks: 12
         BlockstunTicks: 0
-        Knockback: {x: 0, y: 0}
+        Knockback: {x: 8, y: 6}
   - Boxes:
     - Name: Hurt
       CenterLocal: {x: -0.15841585, y: 0.0049505546}

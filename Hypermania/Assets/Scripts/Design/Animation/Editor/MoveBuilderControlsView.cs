@@ -37,11 +37,8 @@ namespace Design.Animation.Editors
             {
                 EditorGUILayout.HelpBox("You have unsaved changes.", MessageType.Warning);
             }
-            using (new EditorGUI.DisabledScope(!m.HasUnsavedChanges))
-            {
-                if (GUILayout.Button(m.HasUnsavedChanges ? "Save *" : "Save"))
-                    m.SaveAsset();
-            }
+            if (GUILayout.Button(m.HasUnsavedChanges ? "Save *" : "Save"))
+                m.SaveAsset();
         }
 
         public void DrawBottomTimelineLayout(MoveBuilderModel m, int tps)

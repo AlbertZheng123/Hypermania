@@ -20,16 +20,12 @@ namespace Design.Animation.Editors
             _controls = new MoveBuilderControlsView();
             _preview = new MoveBuilderPreviewView();
 
-            _model.Changed += Repaint;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
         private void OnDisable()
         {
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-
-            if (_model != null)
-                _model.Changed -= Repaint;
 
             _preview?.Dispose();
             _preview = null;

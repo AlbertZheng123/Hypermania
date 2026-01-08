@@ -79,9 +79,8 @@ namespace Design.Animation.Editors
                 DrawCentered(rect, "Preview instance not available");
                 return;
             }
-            bool clickConsumed = false;
 
-            HandleViewInput(rect, ref clickConsumed);
+            HandleViewInput(rect);
 
             ConfigureCamera(rect);
 
@@ -129,7 +128,7 @@ namespace Design.Animation.Editors
             _previewGO.transform.localScale = Vector3.one;
         }
 
-        private void HandleViewInput(Rect rect, ref bool clickConsumed)
+        private void HandleViewInput(Rect rect)
         {
             var e = Event.current;
             if (e == null)
@@ -169,7 +168,7 @@ namespace Design.Animation.Editors
 
             cam.orthographicSize = 2.5f / Mathf.Max(0.0001f, _zoom);
 
-            float worldPerPixel = (cam.orthographicSize * 2f) / Mathf.Max(1f, rect.height);
+            float worldPerPixel = cam.orthographicSize * 2f / Mathf.Max(1f, rect.height);
             Vector2 panWorld = new Vector2(_panPx.x * worldPerPixel, -_panPx.y * worldPerPixel);
 
             cam.transform.position = new Vector3(-panWorld.x, -panWorld.y, -10f);

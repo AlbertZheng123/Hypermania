@@ -30,5 +30,16 @@ namespace Game.View
                 _fighters[i].Render(state.Frame, state.Fighters[i]);
             }
         }
+
+        public void DeInit()
+        {
+            for (int i = 0; i < _characters.Length; i++)
+            {
+                _fighters[i].DeInit();
+                Destroy(_fighters[i]);
+            }
+            _fighters = null;
+            _characters = null;
+        }
     }
 }
