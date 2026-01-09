@@ -16,8 +16,10 @@ namespace Design
         public float JumpVelocity;
         public HitboxData Walk;
         public HitboxData Idle;
+        public HitboxData LightAerial;
         public HitboxData LightAttack;
         public HitboxData Jump;
+        public HitboxData Hit;
 
         // TODO: many more
 
@@ -28,6 +30,11 @@ namespace Design
             // state in the fighter state for ones that should not loop
             tick = ((tick % data.TotalTicks) + data.TotalTicks) % data.TotalTicks;
             return data.Frames[tick];
+        }
+
+        public bool AnimLoops(CharacterAnimation anim)
+        {
+            return GetHitboxData(anim).Clip.isLooping;
         }
 
         public HitboxData GetHitboxData(CharacterAnimation anim)
@@ -42,6 +49,10 @@ namespace Design
                     return Jump;
                 case CharacterAnimation.LightAttack:
                     return LightAttack;
+                case CharacterAnimation.LightAerial:
+                    return LightAerial;
+                case CharacterAnimation.Hit:
+                    return Hit;
                 default:
                     throw new InvalidOperationException(
                         $"Tried to get hitbox data for {anim} (not registered). Did you add a new type of animation and forget to add it to CharacterConfig.GetHitboxData()?"

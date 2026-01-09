@@ -16,40 +16,20 @@ namespace Game.Runners
         protected float _time;
         private InputBuffer _inputBuffer;
 
-        protected void OnEnable()
-        {
-            _curState = null;
-            _session = null;
-            _initialized = false;
-            _time = 0;
-            _characters = null;
-            _inputBuffer = null;
-        }
-
-        protected void OnDisable()
-        {
-            _curState = null;
-            _session = null;
-            _initialized = false;
-            _time = 0;
-            _characters = null;
-            _inputBuffer = null;
-        }
-
         public override void Init(
             List<(PlayerHandle playerHandle, PlayerKind playerKind, SteamNetworkingIdentity address)> players,
             P2PClient client
         )
         {
             // TODO: take in character selections from matchmaking/lobby
-            CharacterConfig sampleConfig = _characterConfigs.Get(Character.SampleFighter);
+            CharacterConfig sampleConfig = _config.Get(Character.SampleFighter);
             _characters = new CharacterConfig[players.Count];
             for (int i = 0; i < players.Count; i++)
             {
                 _characters[i] = sampleConfig;
             }
 
-            (_curState, _cache) = GameState.Create(_characters);
+            _curState = GameState.Create(_characters);
             SessionBuilder<GameInput, SteamNetworkingIdentity> builder = new SessionBuilder<
                 GameInput,
                 SteamNetworkingIdentity
@@ -70,12 +50,19 @@ namespace Game.Runners
             _session = builder.StartSynctestSession<GameState>();
             _inputBuffer = new InputBuffer();
             _view.Init(_characters);
+            _time = 0;
             _initialized = true;
         }
 
         public override void DeInit()
         {
-            // TODO
+            _initialized = false;
+            _time = 0;
+            _view.DeInit();
+            _inputBuffer = null;
+            _session = null;
+            _curState = null;
+            _characters = null;
         }
 
         public override void Poll(float deltaTime)
@@ -105,7 +92,7 @@ namespace Game.Runners
             }
 
             _session.AddLocalInput(new PlayerHandle(0), _inputBuffer.Consume());
-            _session.AddLocalInput(new PlayerHandle(1), new GameInput(InputFlags.None));
+            _session.AddLocalInput(new PlayerHandle(1), new GameInput(InputFlags.LightAttack));
             List<RollbackRequest<GameState, GameInput>> requests = _session.AdvanceFrame();
             foreach (RollbackRequest<GameState, GameInput> request in requests)
             {
@@ -120,7 +107,7 @@ namespace Game.Runners
                         loadReq.Cell.Load(out _curState);
                         break;
                     case RollbackRequestKind.AdvanceFrameReq:
-                        _curState.Advance(request.GetAdvanceFrameRequest().Inputs, _characters, _cache);
+                        _curState.Advance(request.GetAdvanceFrameRequest().Inputs, _characters, _config);
                         break;
                 }
             }

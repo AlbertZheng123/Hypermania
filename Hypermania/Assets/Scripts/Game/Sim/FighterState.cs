@@ -1,11 +1,9 @@
-using System;
-using System.Buffers.Binary;
-using System.Collections.Generic;
 using Design;
 using Design.Animation;
 using MemoryPack;
 using UnityEngine;
 using Utils;
+using Utils.SoftFloat;
 
 namespace Game.Sim
 {
@@ -28,26 +26,14 @@ namespace Game.Sim
     {
         Grounded,
         Airborne,
-        Crouched,
-    }
-
-    public enum FighterAttackType
-    {
-        Invalid,
-        Light,
-        Medium,
-        Special,
-        Super,
     }
 
     [MemoryPackable]
     public partial struct FighterState
     {
-        public Vector2 Position;
-        public Vector2 Velocity;
-        public float Health;
-
-        public FighterAttackType AttackType;
+        public SVector2 Position;
+        public SVector2 Velocity;
+        public sfloat Health;
 
         /// <summary>
         /// The animation state of the chararcter, indicates which animation is currently playing.
@@ -72,121 +58,165 @@ namespace Game.Sim
 
         public FighterFacing FacingDir;
 
-        [MemoryPackIgnore]
-        public FighterLocation Location
-        {
-            get
-            {
-                if (Position.y > Globals.GROUND)
-                {
-                    return FighterLocation.Airborne;
-                }
-                return FighterLocation.Grounded;
-            }
-        }
         public FighterLocation LastLocation;
         public Frame LocationSt { get; private set; }
 
-        public static FighterState Create(Vector2 position, FighterFacing facingDirection)
+        /// <summary>
+        /// Whether or not the character is performing an aerial attack. Must be updated in the future to support moves
+        /// </summary>
+        [MemoryPackIgnore]
+        private bool IsAerial => AnimState == CharacterAnimation.LightAerial;
+
+        public static FighterState Create(SVector2 position, FighterFacing facingDirection)
         {
             FighterState state = new FighterState();
             state.Position = position;
-            state.Velocity = Vector2.zero;
+            state.Velocity = SVector2.zero;
             state.Mode = FighterMode.Neutral;
             // TODO: character dependent?
             state.Health = 100;
             state.ModeT = int.MaxValue;
-            state.AttackType = FighterAttackType.Invalid;
             state.FacingDir = facingDirection;
             state.AnimState = CharacterAnimation.Idle;
             state.AnimSt = Frame.FirstFrame;
             return state;
         }
 
-        public void ApplyInputIntent(GameInput input, CharacterConfig characterConfig)
+        public FighterLocation Location(GlobalConfig config)
         {
-            // Horizontal movement
-            switch (Mode)
+            if (Position.y > (sfloat)config.GroundY)
             {
-                case FighterMode.Neutral:
-                    {
-                        Velocity.x = 0;
-                        if (input.Flags.HasFlag(InputFlags.Left))
-                            Velocity.x = -characterConfig.Speed;
-                        if (input.Flags.HasFlag(InputFlags.Right))
-                            Velocity.x = characterConfig.Speed;
-                        if (input.Flags.HasFlag(InputFlags.Up) && Location == FighterLocation.Grounded)
-                            Velocity.y = characterConfig.JumpVelocity;
-                        if (input.Flags.HasFlag(InputFlags.LightAttack))
-                        {
-                            switch (Location)
-                            {
-                                case FighterLocation.Grounded:
-                                    {
-                                        Velocity = Vector2.zero;
-                                        Mode = FighterMode.Attacking;
-                                        AttackType = FighterAttackType.Light;
-                                        ModeT = characterConfig.LightAttack.TotalTicks;
-                                    }
-                                    break;
-                            }
-                        }
-                    }
-                    break;
-                case FighterMode.Knockdown:
-                    {
-                        //getup attack/rolls
-                    }
-                    break;
+                return FighterLocation.Airborne;
+            }
+            return FighterLocation.Grounded;
+        }
+
+        public void FaceTowards(SVector2 location)
+        {
+            // can only switch locations if in neutral
+            if (Mode != FighterMode.Neutral)
+            {
+                return;
+            }
+            if (location.x < Position.x)
+            {
+                FacingDir = FighterFacing.Left;
+            }
+            else
+            {
+                FacingDir = FighterFacing.Right;
             }
         }
 
-        public void TickStateMachine(Frame frame)
+        public void ApplyMovementIntent(GameInput input, CharacterConfig characterConfig, GlobalConfig config)
+        {
+            if (Mode != FighterMode.Neutral)
+            {
+                return;
+            }
+            if (Location(config) == FighterLocation.Grounded)
+                Velocity.x = 0;
+            if (input.Flags.HasFlag(InputFlags.Left) && Location(config) == FighterLocation.Grounded)
+                Velocity.x += (sfloat)(-characterConfig.Speed);
+            if (input.Flags.HasFlag(InputFlags.Right) && Location(config) == FighterLocation.Grounded)
+                Velocity.x += (sfloat)characterConfig.Speed;
+            if (input.Flags.HasFlag(InputFlags.Up) && Location(config) == FighterLocation.Grounded)
+                Velocity.y = (sfloat)characterConfig.JumpVelocity;
+        }
+
+        public void ApplyActiveState(Frame frame, GameInput input, CharacterConfig characterConfig, GlobalConfig config)
+        {
+            if (Mode != FighterMode.Neutral)
+            {
+                return;
+            }
+            if (input.Flags.HasFlag(InputFlags.LightAttack))
+            {
+                switch (Location(config))
+                {
+                    case FighterLocation.Grounded:
+                        {
+                            Velocity = SVector2.zero;
+                            Mode = FighterMode.Attacking;
+                            ModeT = characterConfig.LightAttack.TotalTicks;
+                            AnimState = CharacterAnimation.LightAttack;
+                            AnimSt = frame;
+                        }
+                        break;
+                    case FighterLocation.Airborne:
+                        {
+                            Mode = FighterMode.Attacking;
+                            ModeT = characterConfig.LightAerial.TotalTicks;
+                            AnimState = CharacterAnimation.LightAerial;
+                            AnimSt = frame;
+                        }
+                        break;
+                }
+            }
+        }
+
+        public void TickStateMachine(Frame frame, GlobalConfig config)
         {
             ModeT--;
             if (ModeT <= 0)
             {
                 Mode = FighterMode.Neutral;
-                AttackType = FighterAttackType.Invalid;
                 ModeT = int.MaxValue;
             }
-            if (LastLocation != Location)
+            if (LastLocation != Location(config))
             {
-                LastLocation = Location;
+                LastLocation = Location(config);
                 LocationSt = frame;
             }
         }
 
-        public void UpdatePosition(Frame frame)
+        public void UpdatePosition(Frame frame, GlobalConfig config)
         {
             // Apply gravity if not grounded
-            if (Position.y > Globals.GROUND || Velocity.y > 0)
+            if (Position.y > (sfloat)config.GroundY || Velocity.y > 0)
             {
-                Velocity.y += Globals.GRAVITY * 1 / 64;
+                Velocity.y += (sfloat)config.Gravity * 1 / 64;
             }
 
             // Update Position
             Position += Velocity * 1 / 64;
 
             // Floor collision
-            if (Position.y <= Globals.GROUND)
+            if (Position.y <= (sfloat)config.GroundY)
             {
-                Position.y = Globals.GROUND;
+                Position.y = (sfloat)config.GroundY;
 
                 if (Velocity.y < 0)
                     Velocity.y = 0;
             }
-            if (Position.x >= Globals.WALLS)
+            if (Position.x >= (sfloat)config.WallsX)
             {
-                Position.x = Globals.WALLS;
+                Position.x = (sfloat)config.WallsX;
                 if (Velocity.x > 0)
                     Velocity.x = 0;
             }
-            if (Position.x <= -Globals.WALLS)
+            if (Position.x <= -(sfloat)config.WallsX)
             {
-                Position.x = -Globals.WALLS;
+                Position.x = -(sfloat)config.WallsX;
                 if (Velocity.x < 0)
                     Velocity.x = 0;
+            }
+        }
+
+        public void ApplyAerialCancel(Frame frame)
+        {
+            if (Mode != FighterMode.Attacking)
+            {
+                return;
+            }
+            if (IsAerial)
+            {
+                // TODO: apply some landing lag here
+                Mode = FighterMode.Neutral;
+                ModeT = int.MaxValue;
+                AnimState = CharacterAnimation.Idle;
+                AnimSt = frame;
+                Velocity = SVector2.zero;
             }
         }
 
@@ -197,13 +227,13 @@ namespace Game.Sim
 
             foreach (var box in frameData.Boxes)
             {
-                Vector2 centerLocal = box.CenterLocal;
+                SVector2 centerLocal = (SVector2)box.CenterLocal;
                 if (FacingDir == FighterFacing.Left)
                 {
                     centerLocal.x *= -1;
                 }
-                Vector2 sizeLocal = box.SizeLocal;
-                Vector2 centerWorld = Position + centerLocal;
+                SVector2 sizeLocal = (SVector2)box.SizeLocal;
+                SVector2 centerWorld = Position + centerLocal;
                 BoxProps newProps = box.Props;
                 if (FacingDir == FighterFacing.Left)
                 {
@@ -222,41 +252,47 @@ namespace Game.Sim
             Mode = FighterMode.Hitstun;
             // We add + 1 here: ApplyHit is called after applying inputs but before ticking the state machine. If
             // hitStun = 1, that means we would immediately make the player actionable next frame, so we additionally
-            // add 1. See the docs on ModeT for details.
+            // add 1. See the comments on ModeT for details.
             ModeT = props.HitstunTicks + 1;
             Health -= props.Damage;
 
-            Velocity = props.Knockback;
+            Velocity = (SVector2)props.Knockback;
         }
 
-        public void ApplyClank()
+        public void ApplyClank(GlobalConfig config)
         {
+            if (Mode == FighterMode.Hitstun)
+            {
+                return;
+            }
             Mode = FighterMode.Hitstun;
-            ModeT = 10;
-            Velocity = Vector2.zero;
+            ModeT = config.ClankTicks;
+            Velocity = SVector2.zero;
         }
 
-        public CharacterAnimation CalculateSetAnimationState(Frame frame)
+        public CharacterAnimation ApplyPassiveState(Frame frame, GlobalConfig config)
         {
             CharacterAnimation newAnim = CharacterAnimation.Idle;
-            if (Mode == FighterMode.Attacking)
+            if (Mode == FighterMode.Neutral)
             {
-                if (AttackType == FighterAttackType.Light)
-                {
-                    newAnim = CharacterAnimation.LightAttack;
-                }
-            }
-            else if (Mode == FighterMode.Neutral)
-            {
-                if (Location == FighterLocation.Airborne)
+                if (Location(config) == FighterLocation.Airborne)
                 {
                     newAnim = CharacterAnimation.Jump;
                 }
-                else if (Velocity.magnitude > 0.01f)
+                else if (Velocity.magnitude > (sfloat)0.01f)
                 {
                     newAnim = CharacterAnimation.Walk;
                 }
             }
+            else if (Mode == FighterMode.Hitstun)
+            {
+                newAnim = CharacterAnimation.Hit;
+            }
+            else
+            {
+                return AnimState;
+            }
+
             if (newAnim != AnimState)
             {
                 AnimState = newAnim;

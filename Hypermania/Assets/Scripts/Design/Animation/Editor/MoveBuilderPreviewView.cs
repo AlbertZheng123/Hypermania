@@ -211,7 +211,7 @@ namespace Design.Animation.Editors
 
             Handles.BeginGUI();
 
-            for (int i = 0; i < frame.Boxes.Count; i++)
+            void HandleBox(int i)
             {
                 var box = frame.Boxes[i];
                 Rect guiRect = LocalBoxToGuiRect(rect, cam, root, box);
@@ -231,6 +231,19 @@ namespace Design.Animation.Editors
                 {
                     HandleResizeHandles(rect, model, i, guiRect, root, cam);
                 }
+            }
+
+            if (model.SelectedBoxIndex != -1)
+            {
+                HandleBox(model.SelectedBoxIndex);
+            }
+            for (int i = 0; i < frame.Boxes.Count; i++)
+            {
+                if (i == model.SelectedBoxIndex)
+                {
+                    continue;
+                }
+                HandleBox(i);
             }
 
             Handles.EndGUI();
@@ -259,7 +272,7 @@ namespace Design.Animation.Editors
                 _dragging = true;
                 _dragIndex = index;
                 _dragStartMouse = e.mousePosition;
-                _dragStartCenterLocal = frame.Boxes[index].CenterLocal;
+                _dragStartCenterLocal = (Vector2)frame.Boxes[index].CenterLocal;
 
                 e.Use();
                 return;

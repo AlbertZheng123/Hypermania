@@ -16,7 +16,7 @@ namespace Game.Runners
         protected GameView _view;
 
         [SerializeField]
-        protected CharacterConfigStore _characterConfigs;
+        protected GlobalConfig _config;
 
         [SerializeField]
         protected bool _drawHitboxes;
@@ -25,7 +25,6 @@ namespace Game.Runners
         /// The current state of the runner. If you derive from this class, it must be initialized on Init();
         /// </summary>
         protected GameState _curState;
-        protected GameState.GameStateCache _cache;
 
         /// <summary>
         /// The characters of each player. _characters[i] should represent the chararcter being played by handle i. If
@@ -72,12 +71,12 @@ namespace Game.Runners
                     else
                         continue;
 
-                    Vector2 centerLocal = box.CenterLocal;
+                    Vector2 centerLocal = (Vector2)box.CenterLocal;
                     if (_curState.Fighters[i].FacingDir == FighterFacing.Left)
                     {
                         centerLocal.x *= -1;
                     }
-                    Vector2 sizeLocal = box.SizeLocal;
+                    Vector2 sizeLocal = (Vector2)box.SizeLocal;
 
                     Vector3 centerWorld = t.TransformPoint(new Vector3(centerLocal.x, centerLocal.y, 0f));
                     Vector3 halfWorldX = t.TransformVector(new Vector3(sizeLocal.x * 0.5f, 0f, 0f));

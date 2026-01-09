@@ -21,7 +21,12 @@ namespace Design.Animation
         public int BlockstunTicks;
         public Vector2 Knockback;
 
-        public bool Equals(BoxProps other) => Kind == other.Kind && HitstunTicks == other.HitstunTicks;
+        public bool Equals(BoxProps other) =>
+            Kind == other.Kind
+            && HitstunTicks == other.HitstunTicks
+            && Damage == other.Damage
+            && BlockstunTicks == other.BlockstunTicks
+            && Knockback == other.Knockback;
 
         public override bool Equals(object obj) => obj is BoxProps other && Equals(other);
 

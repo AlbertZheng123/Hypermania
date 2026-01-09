@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Design.Animation;
 using UnityEngine;
+using Utils.SoftFloat;
 
 namespace Game.Sim
 {
@@ -11,7 +12,7 @@ namespace Game.Sim
         {
             public BoxEntry BoxA;
             public BoxEntry BoxB;
-            public float OverlapX;
+            public sfloat OverlapX;
         }
 
         public struct BoxEntry
@@ -24,35 +25,35 @@ namespace Game.Sim
         // TODO: move this out into a utils file
         public struct Box
         {
-            public Vector2 Pos;
-            public Vector2 Size;
+            public SVector2 Pos;
+            public SVector2 Size;
 
-            public bool Overlaps(Box b, out float overlapX)
+            public bool Overlaps(Box b, out sfloat overlapX)
             {
-                Vector2 ah = Size * 0.5f;
-                Vector2 bh = b.Size * 0.5f;
+                SVector2 ah = Size * (sfloat)0.5f;
+                SVector2 bh = b.Size * (sfloat)0.5f;
 
-                float aMinX = Pos.x - ah.x;
-                float aMaxX = Pos.x + ah.x;
-                float aMinY = Pos.y - ah.y;
-                float aMaxY = Pos.y + ah.y;
+                sfloat aMinX = Pos.x - ah.x;
+                sfloat aMaxX = Pos.x + ah.x;
+                sfloat aMinY = Pos.y - ah.y;
+                sfloat aMaxY = Pos.y + ah.y;
 
-                float bMinX = b.Pos.x - bh.x;
-                float bMaxX = b.Pos.x + bh.x;
-                float bMinY = b.Pos.y - bh.y;
-                float bMaxY = b.Pos.y + bh.y;
+                sfloat bMinX = b.Pos.x - bh.x;
+                sfloat bMaxX = b.Pos.x + bh.x;
+                sfloat bMinY = b.Pos.y - bh.y;
+                sfloat bMaxY = b.Pos.y + bh.y;
 
-                float ox = Mathf.Min(aMaxX, bMaxX) - Mathf.Max(aMinX, bMinX);
-                if (ox <= 0f)
+                sfloat ox = Mathsf.Min(aMaxX, bMaxX) - Mathsf.Max(aMinX, bMinX);
+                if (ox <= sfloat.Zero)
                 {
-                    overlapX = 0f;
+                    overlapX = sfloat.Zero;
                     return false;
                 }
 
-                float oy = Mathf.Min(aMaxY, bMaxY) - Mathf.Max(aMinY, bMinY);
-                if (oy <= 0f)
+                sfloat oy = Mathsf.Min(aMaxY, bMaxY) - Mathsf.Max(aMinY, bMinY);
+                if (oy <= sfloat.Zero)
                 {
-                    overlapX = 0f;
+                    overlapX = sfloat.Zero;
                     return false;
                 }
 
@@ -71,7 +72,7 @@ namespace Game.Sim
             _boxInds = new List<int>(maxHitboxes);
         }
 
-        public int AddBox(int handle, Vector2 boxPos, Vector2 boxSize, in TData data)
+        public int AddBox(int handle, SVector2 boxPos, SVector2 boxSize, in TData data)
         {
             int ind = _boxPool.Spawn(
                 new BoxEntry
@@ -103,7 +104,7 @@ namespace Game.Sim
                         continue;
                     }
 
-                    if (a.Box.Overlaps(b.Box, out float overlapX))
+                    if (a.Box.Overlaps(b.Box, out sfloat overlapX))
                     {
                         collisions.Add(
                             new Collision

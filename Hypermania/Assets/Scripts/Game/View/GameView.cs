@@ -19,6 +19,7 @@ namespace Game.View
             for (int i = 0; i < characters.Length; i++)
             {
                 _fighters[i] = Instantiate(_characters[i].Prefab);
+                _fighters[i].transform.SetParent(transform, true);
                 _fighters[i].Init(characters[i]);
             }
         }
@@ -36,7 +37,7 @@ namespace Game.View
             for (int i = 0; i < _characters.Length; i++)
             {
                 _fighters[i].DeInit();
-                Destroy(_fighters[i]);
+                Destroy(_fighters[i].gameObject);
             }
             _fighters = null;
             _characters = null;

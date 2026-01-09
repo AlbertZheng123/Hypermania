@@ -8,6 +8,7 @@ using MemoryPack;
 using Netcode.Rollback;
 using UnityEngine;
 using Utils;
+using Utils.SoftFloat;
 
 namespace Game.Sim
 {
@@ -15,22 +16,45 @@ namespace Game.Sim
     public partial class GameState : IState<GameState>
     {
         /// <summary>
-        /// Data structures and other objects that the GameState might need to perform simulation that should not be
-        /// serialized. All data structures/objects must be cleared by the end of the frame! You would typically put a
-        /// heap-allocated object here to avoid allocating one every frame.
+        /// Physics context used to find collisions between boxes.
         /// </summary>
-        public class GameStateCache
+        [ThreadStatic]
+        private static Physics<BoxProps> _physics;
+        private static Physics<BoxProps> Physics
         {
-            /// <summary>
-            /// Physics context used to find collisions between boxes.
-            /// </summary>
-            public Physics<BoxProps> Physics;
+            get
+            {
+                if (_physics == null)
+                    _physics = new Physics<BoxProps>(MAX_COLLIDERS);
+                return _physics;
+            }
+        }
 
-            /// <summary>
-            /// Cached list used to sort and process collisions, cleared at the end of every frame
-            /// </summary>
-            public List<Physics<BoxProps>.Collision> Collisions;
-            public Dictionary<(int, int), Physics<BoxProps>.Collision> HurtHitCollisions;
+        /// <summary>
+        /// Cached list used to sort and process collisions, cleared at the end of every frame
+        /// </summary>
+        [ThreadStatic]
+        private static List<Physics<BoxProps>.Collision> _collisions;
+        private static List<Physics<BoxProps>.Collision> Collisions
+        {
+            get
+            {
+                if (_collisions == null)
+                    _collisions = new List<Physics<BoxProps>.Collision>(MAX_COLLIDERS);
+                return _collisions;
+            }
+        }
+
+        [ThreadStatic]
+        private static Dictionary<(int, int), Physics<BoxProps>.Collision> _hurtHitCollisions;
+        private static Dictionary<(int, int), Physics<BoxProps>.Collision> HurtHitCollisions
+        {
+            get
+            {
+                if (_hurtHitCollisions == null)
+                    _hurtHitCollisions = new Dictionary<(int, int), Physics<BoxProps>.Collision>(MAX_COLLIDERS);
+                return _hurtHitCollisions;
+            }
         }
 
         [MemoryPackIgnore]
@@ -46,30 +70,24 @@ namespace Game.Sim
         /// </summary>
         /// <param name="characterConfigs">Character configs to use</param>
         /// <returns>The created GameState</returns>
-        public static (GameState, GameStateCache) Create(CharacterConfig[] characters)
+        public static GameState Create(CharacterConfig[] characters)
         {
             GameState state = new GameState();
             state.Frame = Frame.FirstFrame;
             state.Fighters = new FighterState[characters.Length];
             for (int i = 0; i < characters.Length; i++)
             {
-                float xPos = i - ((float)characters.Length - 1) / 2;
+                sfloat xPos = i - ((sfloat)characters.Length - 1) / 2;
                 FighterFacing facing = xPos > 0 ? FighterFacing.Left : FighterFacing.Right;
-                state.Fighters[i] = FighterState.Create(new Vector2(xPos, 0f), facing);
+                state.Fighters[i] = FighterState.Create(new SVector2(xPos, sfloat.Zero), facing);
             }
-            GameStateCache cache = new GameStateCache();
-            cache.Physics = new Physics<BoxProps>(MAX_COLLIDERS);
-            // There could be more than MAX_COLLIDERS collisions, but it is a good value to start with to ensure no
-            // reallocations are done
-            cache.Collisions = new List<Physics<BoxProps>.Collision>(MAX_COLLIDERS);
-            cache.HurtHitCollisions = new Dictionary<(int, int), Physics<BoxProps>.Collision>();
-            return (state, cache);
+            return state;
         }
 
         public void Advance(
             (GameInput input, InputStatus status)[] inputs,
             CharacterConfig[] characters,
-            GameStateCache cache
+            GlobalConfig config
         )
         {
             if (inputs.Length != characters.Length || characters.Length != Fighters.Length)
@@ -78,32 +96,28 @@ namespace Game.Sim
             }
             Frame += 1;
 
-            // This function internally appies changes to the fighter's Mode, which will be used to derive the animation
-            // state later.
+            // This function internally appies changes to the fighter's velocity based on movement inputs
             for (int i = 0; i < Fighters.Length; i++)
             {
-                Fighters[i].ApplyInputIntent(inputs[i].input, characters[i]);
+                Fighters[i].ApplyMovementIntent(inputs[i].input, characters[i], config);
             }
 
-            // If a player applies inputs to start a move at the start of the frame, we wish to apply those inputs and
-            // start the move immediately. Thus, we call CalculateSetAnimationState on the beginning (to handle state
-            // changing based on the input), as well as on the end (to handle state changing based on
-            // movement/collision, etc.) of a frame.
+            // If a player applies inputs to start a state at the start of the frame, we should apply those immediately
             for (int i = 0; i < Fighters.Length; i++)
             {
-                Fighters[i].CalculateSetAnimationState(Frame);
+                Fighters[i].ApplyActiveState(Frame, inputs[i].input, characters[i], config);
             }
 
             // Each fighter then adds their hit/hurtboxes to the physics context, which will solve and find all
             // collisions. It is our job to then handle them.
             for (int i = 0; i < Fighters.Length; i++)
             {
-                Fighters[i].AddBoxes(Frame, characters[i], cache.Physics, i);
+                Fighters[i].AddBoxes(Frame, characters[i], Physics, i);
             }
 
             // AdvanceProjectiles();
 
-            cache.Physics.GetCollisions(cache.Collisions);
+            Physics.GetCollisions(Collisions);
 
             // First, solve collisions that would result in player damage. There can only be one such collision per
             // (A, B) ordered pair, where A and B are players, projectiles, or other game objects. For now, we take the
@@ -117,7 +131,7 @@ namespace Game.Sim
             // colliding. If they are, push them apart.
             Physics<BoxProps>.Collision? clank = null;
             Physics<BoxProps>.Collision? collide = null;
-            foreach (var c in cache.Collisions)
+            foreach (var c in Collisions)
             {
                 (int, int) hitPair = (-1, -1);
                 if (c.BoxA.Data.Kind == HitboxKind.Hitbox && c.BoxB.Data.Kind == HitboxKind.Hurtbox)
@@ -139,53 +153,57 @@ namespace Game.Sim
                 // TODO: sort by priority or something
                 if (hitPair != (-1, -1))
                 {
-                    cache.HurtHitCollisions[hitPair] = c;
+                    HurtHitCollisions[hitPair] = c;
                 }
             }
 
-            if (cache.HurtHitCollisions.Count > 0)
+            if (HurtHitCollisions.Count > 0)
             {
-                foreach (var c in cache.HurtHitCollisions.Values)
+                foreach (var c in HurtHitCollisions.Values)
                 {
-                    HandleCollision(c);
+                    HandleCollision(c, config);
                 }
             }
             else if (clank.HasValue)
             {
-                HandleCollision(clank.Value);
+                HandleCollision(clank.Value, config);
             }
             else if (collide.HasValue)
             {
-                HandleCollision(collide.Value);
+                HandleCollision(collide.Value, config);
             }
 
             // Clear the physics context for the next frame, which will then re-add boxes and solve for collisions again
-            cache.Physics.Clear();
-            cache.Collisions.Clear();
-            cache.HurtHitCollisions.Clear();
+            Physics.Clear();
+            Collisions.Clear();
+            HurtHitCollisions.Clear();
 
             // Apply any velocities set during movement or through knockback.
             for (int i = 0; i < Fighters.Length; i++)
             {
-                Fighters[i].UpdatePosition(Frame);
+                Fighters[i].UpdatePosition(Frame, config);
             }
 
-            // The second call to CalculateSetAnimationState: apply any changes as a result of collision calculations
-            // and/or movement calculations.
-            for (int i = 0; i < inputs.Length && i < Fighters.Length; i++)
+            for (int i = 0; i < Fighters.Length; i++)
             {
-                Fighters[i].CalculateSetAnimationState(Frame);
+                Fighters[i].FaceTowards(Fighters[i ^ 1].Position);
             }
 
             // Tick the state machine, decreasing any forms of hitstun/blockstun and/or move timers, allowing us to
             // become actionable next frame, etc.
             for (int i = 0; i < inputs.Length && i < Fighters.Length; i++)
             {
-                Fighters[i].TickStateMachine(Frame);
+                Fighters[i].TickStateMachine(Frame, config);
+            }
+
+            // Apply and change the state that derives only from passive factors (movements, the Mode, etc)
+            for (int i = 0; i < inputs.Length && i < Fighters.Length; i++)
+            {
+                Fighters[i].ApplyPassiveState(Frame, config);
             }
         }
 
-        private void HandleCollision(Physics<BoxProps>.Collision c)
+        private void HandleCollision(Physics<BoxProps>.Collision c, GlobalConfig config)
         {
             if (c.BoxA.Data.Kind == HitboxKind.Hitbox && c.BoxB.Data.Kind == HitboxKind.Hurtbox)
             {
@@ -198,14 +216,14 @@ namespace Game.Sim
             if (c.BoxA.Data.Kind == HitboxKind.Hitbox && c.BoxB.Data.Kind == HitboxKind.Hitbox)
             {
                 // TODO: check if moves are allowed to clank
-                Fighters[c.BoxA.Owner].ApplyClank();
-                Fighters[c.BoxB.Owner].ApplyClank();
+                Fighters[c.BoxA.Owner].ApplyClank(config);
+                Fighters[c.BoxB.Owner].ApplyClank(config);
             }
             if (c.BoxA.Data.Kind == HitboxKind.Hurtbox && c.BoxB.Data.Kind == HitboxKind.Hurtbox)
             {
                 // TODO: more advanced pushing/hitbox handling, e.g. if someone airborne they shouldn't be able to be
                 // pushed
-                if (Fighters[c.BoxA.Owner].Position.x < Fighters[c.BoxB.Owner].Position.x)
+                if (c.BoxA.Box.Pos.x < c.BoxB.Box.Pos.x)
                 {
                     Fighters[c.BoxA.Owner].Position.x -= c.OverlapX / 2;
                     Fighters[c.BoxB.Owner].Position.x += c.OverlapX / 2;

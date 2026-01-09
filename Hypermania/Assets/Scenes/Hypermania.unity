@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _view: {fileID: 2114326934}
-  _characterConfigs: {fileID: 11400000, guid: 097b22ad0bf6d4d8fab37f2f2510eefb, type: 2}
+  _config: {fileID: 11400000, guid: 097b22ad0bf6d4d8fab37f2f2510eefb, type: 2}
   _drawHitboxes: 1
 --- !u!4 &286925406
 Transform:
@@ -407,7 +407,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 965d986c9c15e8919988186056ae185c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Runner: {fileID: 731679223}
+  Runner: {fileID: 286925405}
 --- !u!1 &731679220
 GameObject:
   m_ObjectHideFlags: 0
@@ -453,7 +453,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _view: {fileID: 2114326934}
-  _characterConfigs: {fileID: 11400000, guid: 097b22ad0bf6d4d8fab37f2f2510eefb, type: 2}
+  _config: {fileID: 11400000, guid: 097b22ad0bf6d4d8fab37f2f2510eefb, type: 2}
   _drawHitboxes: 1
 --- !u!1 &1565177893
 GameObject:

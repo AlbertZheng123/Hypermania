@@ -4,9 +4,14 @@ using UnityEngine;
 
 namespace Design
 {
-    [CreateAssetMenu(menuName = "Hypermania/Character Config Store")]
-    public class CharacterConfigStore : ScriptableObject
+    [CreateAssetMenu(menuName = "Hypermania/Global Config")]
+    public class GlobalConfig : ScriptableObject
     {
+        public float Gravity = -20;
+        public float GroundY = -3f;
+        public float WallsX = 4f;
+        public int ClankTicks = 30;
+
         [SerializeField]
         private List<CharacterConfig> _configs;
 

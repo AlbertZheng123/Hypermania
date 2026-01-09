@@ -32,8 +32,8 @@ namespace Game.View
         public void Render(Frame frame, in FighterState state)
         {
             Vector3 pos = transform.position;
-            pos.x = state.Position.x;
-            pos.y = state.Position.y;
+            pos.x = (float)state.Position.x;
+            pos.y = (float)state.Position.y;
             transform.position = pos;
 
             _spriteRenderer.flipX = state.FacingDir == FighterFacing.Left;
@@ -41,9 +41,15 @@ namespace Game.View
             CharacterAnimation animation = state.AnimState;
             int totalTicks = _characterConfig.GetHitboxData(animation).TotalTicks;
 
-            // Default loop the animation, this is okay because any animations that aren't supposed to loop will be
-            // ended by the FighterState
-            int ticks = (frame - state.AnimSt) % totalTicks;
+            int ticks = frame - state.AnimSt;
+            if (_characterConfig.AnimLoops(animation))
+            {
+                ticks %= totalTicks;
+            }
+            else
+            {
+                ticks = Mathf.Min(ticks, totalTicks - 1);
+            }
 
             _animator.Play(animation.ToString(), 0, (float)ticks / totalTicks);
             _animator.Update(0f); // force pose evaluation this frame while paused
