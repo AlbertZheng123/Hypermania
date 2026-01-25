@@ -18,7 +18,7 @@ namespace Game.View
         private CharacterConfig[] _characters;
 
         public ManiaViewConfig Config;
-
+        private DJ_CameraControl CameraControl;
         public void Init(CharacterConfig[] characters)
         {
             _conductor = GetComponent<Conductor>();
