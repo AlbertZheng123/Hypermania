@@ -35,6 +35,7 @@ namespace Game.Sim
         public SVector2 Position;
         public SVector2 Velocity;
         public sfloat Health;
+        public LT_inputHistory inputH;
 
         /// <summary>
         /// The animation state of the chararcter, indicates which animation is currently playing.
@@ -80,6 +81,7 @@ namespace Game.Sim
             state.FacingDir = facingDirection;
             state.AnimState = CharacterAnimation.Idle;
             state.AnimSt = Frame.FirstFrame;
+            state.inputH = LT_inputHistory.Create();
             return state;
         }
 
@@ -171,13 +173,25 @@ namespace Game.Sim
             }
         }
 
-        public void TickStateMachine(Frame frame, GlobalConfig config)
+        public void TickStateMachine(Frame frame, CharacterConfig characterConfig, GlobalConfig config)
         {
             ModeT--;
             if (ModeT <= 0)
             {
-                Mode = FighterMode.Neutral;
-                ModeT = int.MaxValue;
+                // Checks if beforehand, the super attack was inputted 8 frames or below. If so, execute immediately after cooldown.
+                if ((inputH.wasPressed(InputFlags.SuperAttack, 6)) && Location(config) == FighterLocation.Grounded)
+                {
+                    Velocity = SVector2.zero;
+                    Mode = FighterMode.Attacking;
+                    ModeT = characterConfig.SuperAttack.TotalTicks;
+                    AnimState = CharacterAnimation.SuperAttack;
+                    AnimSt = frame;
+                }
+                else
+                {
+                    Mode = FighterMode.Neutral;
+                    ModeT = int.MaxValue;
+                }
             }
             if (LastLocation != Location(config))
             {

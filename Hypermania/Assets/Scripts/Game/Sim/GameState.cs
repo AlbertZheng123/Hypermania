@@ -114,6 +114,12 @@ namespace Game.Sim
             }
             Frame += 1;
 
+            for (int i = 0; i < Fighters.Length; i++)
+            {
+                // Push the current input into the input history, to read for buffering. 
+                Fighters[i].inputH.push(inputs[i].input);
+            }
+
             if (GameMode == GameMode.Fighting)
             {
                 // This function internally appies changes to the fighter's velocity based on movement inputs
@@ -164,7 +170,7 @@ namespace Game.Sim
             // become actionable next frame, etc.
             for (int i = 0; i < Fighters.Length; i++)
             {
-                Fighters[i].TickStateMachine(Frame, config);
+                Fighters[i].TickStateMachine(Frame, characters[i], config);
             }
 
             // Apply and change the state that derives only from passive factors (movements, the Mode, etc)

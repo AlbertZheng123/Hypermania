@@ -69,11 +69,9 @@ namespace Game
             else
             {
                 res = new GameInput(buffer[frontIdx]);
-                Debug.Log(buffer[frontIdx]);
                 frontIdx = (frontIdx + 1) % buffer.Length;
                 size--;
             }
-            Debug.Log(string.Join(" : ", buffer));
 
             return res;
         }
