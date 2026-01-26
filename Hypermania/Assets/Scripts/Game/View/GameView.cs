@@ -16,11 +16,17 @@ namespace Game.View
         private FighterView[] _fighters;
         private ManiaView[] _manias;
         private CharacterConfig[] _characters;
+        
+        public GameObject HealthbarPrefab;
+        private GameObject[] _healthbars;
+        public Canvas canvas;
 
         public ManiaViewConfig Config;
 
         public void Init(CharacterConfig[] characters)
         {
+            _healthbars = new GameObject[2];
+
             _conductor = GetComponent<Conductor>();
             if (_conductor == null)
             {
@@ -45,6 +51,17 @@ namespace Game.View
                 _manias[i].Init(new Vector2(8f * xPos, 0f), Config);
             }
             _conductor.Init();
+
+            for (int i = 0; i < _healthbars.Length; i++) {
+                _healthbars[i] = Instantiate(HealthbarPrefab);
+                _healthbars[i].transform.SetParent(canvas.transform);
+            }
+            _healthbars[0].GetComponent<RectTransform>().anchoredPosition = new Vector2(-615f, 445f);
+
+            _healthbars[1].GetComponent<RectTransform>().anchoredPosition = new Vector2(615f, 445f);
+            _healthbars[1].GetComponent<RectTransform>().localScale = new Vector3(-1,1,1);
+
+
         }
 
         public void Render(in GameState state, GlobalConfig config)
@@ -59,7 +76,13 @@ namespace Game.View
             List<Vector2> interestPoints = new List<Vector2>();
             for (int i = 0; i < _characters.Length; i++)
             {
+                HealthBarScript healthbarScript = _healthbars[i].GetComponent<HealthBarScript>();
                 interestPoints.Add((Vector2)state.Fighters[i].Position);
+
+                if (healthbarScript.slider.maxValue == 1) {
+                    healthbarScript.SetMaxHealth((int) state.Fighters[i].Health);
+                }
+                healthbarScript.SetHealth((int) state.Fighters[i].Health);
             }
         }
 
