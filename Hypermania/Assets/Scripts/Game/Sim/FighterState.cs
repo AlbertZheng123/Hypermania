@@ -169,7 +169,14 @@ namespace Game.Sim
             {
                 if (placement == FighterLocation.Grounded)
                 {
-                    Velocity.y = (sfloat)characterConfig.JumpVelocity;
+                    if (inputH.wasHeld(InputFlags.Down, 5, 8))
+                    {
+                        Velocity.y = (sfloat)(1.25 * characterConfig.JumpVelocity);
+                    }
+                    else
+                    {
+                        Velocity.y = (sfloat)characterConfig.JumpVelocity;
+                    }
                 }
             }
         }

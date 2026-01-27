@@ -79,5 +79,32 @@ namespace Game.Sim
             }
             return false;
         }
+
+        // Was an input held for a long enough period of time?
+        public bool wasHeld(InputFlags flag, int framesLong, int withinFrames)
+        {
+            if (withinFrames < 0 || withinFrames >= count)
+            {
+                return false;
+            }
+            int heldCount = 0;
+            for (int i = withinFrames - 1; i >= 0; i--)
+            {
+                Debug.Log(heldCount);
+                if ((getInput(i).Flags & flag) == flag)
+                {
+                    heldCount++;
+                    if (heldCount >= framesLong)
+                    {
+                        return true;
+                    }
+                    continue;
+                } else
+                {
+                    heldCount = 0;
+                }
+            }
+            return false;
+        }
     }
 }
