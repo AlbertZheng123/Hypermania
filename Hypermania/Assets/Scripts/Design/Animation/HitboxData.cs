@@ -47,8 +47,8 @@ namespace Design.Animation
     {
         public string Name;
 
-        public Vector2 CenterLocal;
-        public Vector2 SizeLocal;
+        public SVector2 CenterLocal;
+        public SVector2 SizeLocal;
         public BoxProps Props;
 
         public bool Equals(BoxData other)
