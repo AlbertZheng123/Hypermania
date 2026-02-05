@@ -1,42 +1,38 @@
-using System.Collections.Generic;
 using Design;
 using Game.Sim;
 using UnityEngine;
 using Utils;
 
-namespace Game.View
+namespace Game.View.Fighters
 {
-    [RequireComponent(typeof(SpriteRenderer), typeof(Animator))]
+    [RequireComponent(typeof(Animator))]
     public class FighterView : MonoBehaviour
     {
         private Animator _animator;
-        private SpriteRenderer _spriteRenderer;
         private CharacterConfig _characterConfig;
         private RuntimeAnimatorController _oldController;
 
-        private void Awake()
+        public virtual void Awake()
         {
             _animator = GetComponent<Animator>();
             _animator.speed = 0f;
-
-            _spriteRenderer = GetComponent<SpriteRenderer>();
         }
 
-        public void Init(CharacterConfig characterConfig)
+        public virtual void Init(CharacterConfig characterConfig)
         {
             _characterConfig = characterConfig;
             _oldController = _animator.runtimeAnimatorController;
             _animator.runtimeAnimatorController = characterConfig.AnimationController;
         }
 
-        public void Render(Frame frame, in FighterState state)
+        public virtual void Render(Frame frame, in FighterState state)
         {
             Vector3 pos = transform.position;
             pos.x = (float)state.Position.x;
             pos.y = (float)state.Position.y;
-            transform.position = pos;
 
-            _spriteRenderer.flipX = state.FacingDir == FighterFacing.Left;
+            transform.position = pos;
+            transform.localScale = new Vector3(state.FacingDir == FighterFacing.Left ? -1 : 1, 1f, 1f);
 
             CharacterState animation = state.State;
             int totalTicks = _characterConfig.GetHitboxData(animation).TotalTicks;
