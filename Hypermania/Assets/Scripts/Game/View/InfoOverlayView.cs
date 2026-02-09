@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Game.View
 {
+    [RequireComponent(typeof(TextMeshProUGUI))]
     public class InfoOverlayView : MonoBehaviour
     {
         public struct PerSecondCounter
@@ -31,6 +32,12 @@ namespace Game.View
 
         private PerSecondCounter _fps;
         private PerSecondCounter _tps;
+        private TMP_Text _detailText;
+
+        public void Awake()
+        {
+            _detailText = GetComponent<TextMeshProUGUI>();
+        }
 
         public void Render(InfoOverlayDetails details)
         {
@@ -40,7 +47,7 @@ namespace Game.View
             {
                 detailsString += "  Ping: " + details.Ping + "ms";
             }
-            GetComponent<TMP_Text>().SetText(detailsString);
+            _detailText.SetText(detailsString);
         }
 
         public void Update()

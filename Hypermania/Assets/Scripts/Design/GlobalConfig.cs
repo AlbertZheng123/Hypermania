@@ -13,6 +13,7 @@ namespace Design
         public sfloat GroundY = -3;
         public sfloat WallsX = 4;
         public int ClankTicks = 30;
+        public int RoundTimeTicks = 10800;
 
         [SerializeField]
         private EnumArray<Character, CharacterConfig> _configs;

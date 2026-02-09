@@ -54,11 +54,11 @@ namespace Game.Sim
         /// </summary>
         /// <param name="characterConfigs">Character configs to use</param>
         /// <returns>The created GameState</returns>
-        public static GameState Create(CharacterConfig[] characters)
+        public static GameState Create(GlobalConfig config, CharacterConfig[] characters)
         {
             GameState state = new GameState();
             state.Frame = Frame.FirstFrame;
-            state.RoundEnd = new Frame(10800);
+            state.RoundEnd = new Frame(config.RoundTimeTicks);
             state.Fighters = new FighterState[characters.Length];
             state.Manias = new ManiaState[characters.Length];
             state.GameMode = GameMode.Fighting;
@@ -102,6 +102,7 @@ namespace Game.Sim
                     Fighters[i].RoundReset(new SVector2(xPos, sfloat.Zero), facing, characters[i]);
                 }
                 GameMode = GameMode.Fighting;
+                RoundEnd = Frame + config.RoundTimeTicks;
             }
 
             // Push the current input into the input history, to read for buffering.
@@ -149,7 +150,7 @@ namespace Game.Sim
 
             if (Frame == RoundEnd)
             {
-                RoundEnd = Frame + 10800;
+                RoundEnd = Frame + config.RoundTimeTicks;
                 //TODO: Properly handle edge case where player health is equal. Currently player 1 wins by default.
                 if (Fighters[0].Health < Fighters[1].Health)
                 {

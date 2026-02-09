@@ -5,7 +5,7 @@ using Utils;
 namespace Game.View
 {
     [RequireComponent(typeof(TextMeshProUGUI))]
-    public class DD_RoundTimerView : MonoBehaviour
+    public class RoundTimerView : MonoBehaviour
     {
         private TMP_Text _roundTimer;
         int time;

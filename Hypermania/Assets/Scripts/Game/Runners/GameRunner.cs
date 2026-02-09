@@ -52,7 +52,7 @@ namespace Game.Runners
             _characters = new CharacterConfig[players.Count];
             _characters[0] = nytheaConfig;
             _characters[1] = nytheaConfig;
-            _curState = GameState.Create(_characters);
+            _curState = GameState.Create(_config, _characters);
             _view.Init(_characters);
             _inputBuffer = new InputBuffer();
             _time = 0;
