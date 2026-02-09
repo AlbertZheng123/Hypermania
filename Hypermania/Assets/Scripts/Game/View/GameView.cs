@@ -15,9 +15,11 @@ namespace Game.View
         private Conductor _conductor;
         public FighterView[] Fighters => _fighters;
 
-        public BurstBarView[] BurstBars;
         private FighterView[] _fighters;
         private CharacterConfig[] _characters;
+
+        [SerializeField]
+        private BurstBarView[] _burstBars;
 
         [SerializeField]
         private FighterIndicatorManager _fighterIndicatorManager;
@@ -61,17 +63,17 @@ namespace Game.View
                     throw new InvalidOperationException("Healthbars must be assigned to the game view!");
                 }
             }
-            if (BurstBars == null)
+            if (_burstBars == null)
             {
                 throw new InvalidOperationException("BurstBars should exist");
             }
-            if (BurstBars.Length != 2)
+            if (_burstBars.Length != 2)
             {
                 throw new InvalidOperationException("BurstBars length should be 2");
             }
             for (int i = 0; i < 2; i++)
             {
-                if (BurstBars[i] == null)
+                if (_burstBars[i] == null)
                 {
                     throw new InvalidOperationException("BurstBars must be assigned to the game view!");
                 }
@@ -103,7 +105,7 @@ namespace Game.View
 
                 _manias[i].Init();
                 _healthbars[i].SetMaxHealth((float)characters[i].Health);
-                BurstBars[i].SetMaxBurst((float)characters[i].BurstMax);
+                _burstBars[i].SetMaxBurst((float)characters[i].BurstMax);
             }
             _conductor.Init();
         }
@@ -130,7 +132,7 @@ namespace Game.View
             for (int i = 0; i < _characters.Length; i++)
             {
                 _healthbars[i].SetHealth((int)state.Fighters[i].Health);
-                BurstBars[i].SetBurst((int)state.Fighters[i].Burst);
+                _burstBars[i].SetBurst((int)state.Fighters[i].Burst);
             }
 
             _cameraControl.UpdateCamera(interestPoints, _zoom);
