@@ -66,7 +66,8 @@ namespace Game.Sim
         public bool PressedRecently(InputFlags flag, int withinFrames, int beforeFrames = 0)
         {
             return HasInputSeqeunce(
-                stackalloc InputHistoryEntry[] {
+                stackalloc InputHistoryEntry[]
+                {
                     new InputHistoryEntry { Pressed = false, Input = flag },
                     new InputHistoryEntry { Pressed = true, Input = flag },
                 },
@@ -78,7 +79,8 @@ namespace Game.Sim
         public bool PressedAndReleasedRecently(InputFlags flag, int withinFrames, int beforeFrames = 0)
         {
             return HasInputSeqeunce(
-                stackalloc InputHistoryEntry[] {
+                stackalloc InputHistoryEntry[]
+                {
                     new InputHistoryEntry { Pressed = false, Input = flag },
                     new InputHistoryEntry { Pressed = true, Input = flag },
                     new InputHistoryEntry { Pressed = false, Input = flag },
@@ -108,7 +110,8 @@ namespace Game.Sim
         public bool ReleasedRecently(InputFlags flag, int withinFrames, int beforeFrames = 0)
         {
             return HasInputSeqeunce(
-                stackalloc InputHistoryEntry[] {
+                stackalloc InputHistoryEntry[]
+                {
                     new InputHistoryEntry { Pressed = true, Input = flag },
                     new InputHistoryEntry { Pressed = false, Input = flag },
                 },
