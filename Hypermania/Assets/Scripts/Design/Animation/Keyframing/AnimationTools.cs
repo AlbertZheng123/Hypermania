@@ -68,7 +68,7 @@ namespace Design.Animation.Keyframing
                     var sr = t.GetComponent<SpriteRenderer>();
                     if (sr != null)
                     {
-                        AddFloatKeyAtTime(
+                        AddDiscreteIntKeyAtTime(
                             clip: _clip,
                             animRoot: animRoot,
                             componentType: typeof(SpriteRenderer),
@@ -83,11 +83,11 @@ namespace Design.Animation.Keyframing
                     if (resolver != null)
                     {
                         int hash = ReadSpriteResolverSpriteHash(resolver);
-                        AddFloatKeyAtTime(
+                        AddDiscreteIntKeyAtTime(
                             clip: _clip,
                             animRoot: animRoot,
-                            componentType: typeof(SpriteResolver),
                             targetTransform: t,
+                            componentType: typeof(SpriteResolver),
                             propertyName: "m_SpriteHash",
                             time: 0f,
                             value: hash
@@ -342,6 +342,44 @@ namespace Design.Animation.Keyframing
             else
             {
                 curve.AddKey(k);
+            }
+
+            AnimationUtility.SetEditorCurve(clip, binding, curve);
+        }
+
+        private static void AddDiscreteIntKeyAtTime(
+            AnimationClip clip,
+            Transform animRoot,
+            Transform targetTransform,
+            Type componentType,
+            string propertyName,
+            float time,
+            int value
+        )
+        {
+            string path = AnimationUtility.CalculateTransformPath(targetTransform, animRoot);
+
+            var binding = EditorCurveBinding.DiscreteCurve(path, componentType, propertyName);
+
+            var curve = AnimationUtility.GetEditorCurve(clip, binding) ?? new AnimationCurve();
+
+            var k = new Keyframe(time, value)
+            {
+                inTangent = float.PositiveInfinity,
+                outTangent = float.PositiveInfinity,
+            };
+
+            int idx = FindKeyIndexAtTime(curve.keys, time);
+            if (idx >= 0)
+                curve.MoveKey(idx, k);
+            else
+                curve.AddKey(k);
+
+            // Re-apply tangents as constant using the supported API as well.
+            for (int i = 0; i < curve.length; i++)
+            {
+                AnimationUtility.SetKeyLeftTangentMode(curve, i, AnimationUtility.TangentMode.Constant);
+                AnimationUtility.SetKeyRightTangentMode(curve, i, AnimationUtility.TangentMode.Constant);
             }
 
             AnimationUtility.SetEditorCurve(clip, binding, curve);
