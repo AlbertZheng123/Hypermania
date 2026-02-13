@@ -11,6 +11,7 @@ namespace Design.Animation
         Hurtbox,
         Hitbox,
     }
+
     [Serializable]
     public enum AttackKind
     {
@@ -18,6 +19,7 @@ namespace Design.Animation
         Overhead,
         Low,
     }
+
     [Serializable]
     public struct BoxProps : IEquatable<BoxProps>
     {

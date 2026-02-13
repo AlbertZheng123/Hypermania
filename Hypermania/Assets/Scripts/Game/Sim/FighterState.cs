@@ -350,7 +350,7 @@ namespace Game.Sim
 
             bool standBlock = props.AttackKind != AttackKind.Low;
             bool crouchBlock = props.AttackKind != AttackKind.Overhead;
-            
+
             bool blockSuccess = false;
             if (holdingBack)
             {
@@ -373,7 +373,7 @@ namespace Game.Sim
                 ImmunityEnd = frame + 7;
                 return;
             }
-            
+
             State = CharacterState.Hit;
             StateStart = frame;
             // Apply Hit/collision stuff is done after the player is actionable, so if the player needs to be
