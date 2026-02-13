@@ -53,7 +53,7 @@ namespace Game.View
         [SerializeField]
         private bool _disableCameraShake;
 
-        public void Init(CharacterConfig[] characters)
+        public void Init(GlobalConfig config, CharacterConfig[] characters)
         {
             if (characters.Length != 2)
             {
@@ -80,7 +80,7 @@ namespace Game.View
                 _playerParams[i].HealthBarView.SetMaxHealth((float)characters[i].Health);
                 _playerParams[i].BurstBarView.SetMaxBurst((float)characters[i].BurstMax);
             }
-            _conductor.Init();
+            _conductor.Init(config.Audio);
             _rollbackStart = Frame.NullFrame;
         }
 

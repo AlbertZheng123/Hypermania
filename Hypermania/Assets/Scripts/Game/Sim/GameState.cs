@@ -303,26 +303,15 @@ namespace Game.Sim
                         && GameMode == GameMode.Fighting
                     )
                     {
-                        // TODO: fix me, 30.72 is hardcoded ticks/beat
-                        // make the start frame always be on a multiple of 4 beats starting from 0
-                        sfloat ticksPerBeat = (sfloat)30.72;
-                        int barInterval = Mathsf.RoundToInt(ticksPerBeat * 4);
                         Frame baseSt = Frame + 10;
-                        Frame stFrame = baseSt - baseSt.No % barInterval + barInterval;
+                        Frame nextBeat = config.Audio.NextBeat(baseSt, AudioConfig.BeatSubdivision.WholeNote);
 
                         for (int i = 0; i < 16; i++)
                         {
-                            Manias[owners.Item1]
-                                .QueueNote(
-                                    i % 4,
-                                    new ManiaNote
-                                    {
-                                        Length = 0,
-                                        Tick = stFrame + Mathsf.RoundToInt(ticksPerBeat / 2 * i),
-                                    }
-                                );
+                            Manias[owners.Item1].QueueNote(i % 4, new ManiaNote { Length = 0, Tick = nextBeat });
+                            nextBeat = config.Audio.NextBeat(nextBeat + 1, AudioConfig.BeatSubdivision.EighthNote);
                         }
-                        Manias[owners.Item1].Enable(stFrame + Mathsf.RoundToInt(ticksPerBeat / 2 * 16));
+                        Manias[owners.Item1].Enable(nextBeat);
                         GameMode = GameMode.Mania;
                         // TODO: show mania screen only after the maximum rollback frames to ensure no visual artifacting
                     }
