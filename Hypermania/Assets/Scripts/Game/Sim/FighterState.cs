@@ -29,6 +29,8 @@ namespace Game.Sim
         public sfloat Health;
         public int ComboedCount;
         public InputHistory InputH;
+        public int Lives;
+        public sfloat Burst;
 
         public CharacterState State { get; private set; }
         public Frame StateStart { get; private set; }
@@ -44,27 +46,55 @@ namespace Game.Sim
         public FighterLocation LastLocation;
         public Frame LocationSt { get; private set; }
 
+        public BoxProps HitProps { get; private set; }
+        public SVector2 HitLocation { get; private set; }
+
         public bool IsAerial =>
             State == CharacterState.LightAerial
             || State == CharacterState.MediumAerial
             || State == CharacterState.SuperAerial
             || State == CharacterState.SpecialAerial;
 
-        public static FighterState Create(SVector2 position, FighterFacing facingDirection, CharacterConfig config)
+        public static FighterState Create(
+            SVector2 position,
+            FighterFacing facingDirection,
+            CharacterConfig config,
+            int lives
+        )
         {
-            FighterState state = new FighterState();
-            state.Position = position;
-            state.Velocity = SVector2.zero;
-            state.State = CharacterState.Idle;
-            state.StateStart = Frame.FirstFrame;
-            state.StateEnd = Frame.Infinity;
-            state.ImmunityEnd = Frame.FirstFrame;
-            state.ComboedCount = 0;
-            state.InputH = new InputHistory();
-            // TODO: character dependent?
-            state.Health = config.Health;
-            state.FacingDir = facingDirection;
+            FighterState state = new FighterState
+            {
+                Position = position,
+                Velocity = SVector2.zero,
+                State = CharacterState.Idle,
+                StateStart = Frame.FirstFrame,
+                StateEnd = Frame.Infinity,
+                ImmunityEnd = Frame.FirstFrame,
+                ComboedCount = 0,
+                InputH = new InputHistory(),
+                // TODO: character dependent?
+                Health = config.Health,
+                FacingDir = facingDirection,
+                Lives = lives,
+                Burst = 0,
+            };
             return state;
+        }
+
+        public void RoundReset(SVector2 position, FighterFacing facingDirection, CharacterConfig config)
+        {
+            Position = position;
+            Velocity = SVector2.zero;
+            State = CharacterState.Idle;
+            StateStart = Frame.FirstFrame;
+            StateEnd = Frame.Infinity;
+            ImmunityEnd = Frame.FirstFrame;
+            ComboedCount = 0;
+            InputH.Clear(); // Clear, don't want to read input from a previous round.
+            // TODO: character dependent?
+            Burst = 0;
+            Health = config.Health;
+            FacingDir = facingDirection;
         }
 
         public void DoFrameStart()
@@ -73,6 +103,8 @@ namespace Game.Sim
             {
                 ComboedCount = 0;
             }
+            HitLocation = SVector2.zero;
+            HitProps = new BoxProps();
         }
 
         public FighterLocation Location(GlobalConfig config)
@@ -166,6 +198,17 @@ namespace Game.Sim
 
         public void ApplyActiveState(Frame frame, CharacterConfig characterConfig, GlobalConfig config)
         {
+            if (State == CharacterState.Hit)
+            {
+                if (InputH.IsHeld(InputFlags.Burst))
+                {
+                    Burst = 0;
+                    State = CharacterState.Burst;
+                    StateStart = frame;
+                    StateEnd = StateStart + characterConfig.GetHitboxData(State).TotalTicks;
+                    // TODO: apply knockback to other player (this should be a hitbox on a burst animation with large kb)
+                }
+            }
             if (State != CharacterState.Idle && State != CharacterState.Walk && State != CharacterState.Jump)
             {
                 return;
@@ -191,7 +234,21 @@ namespace Game.Sim
                         break;
                 }
             }
-            else if (InputH.PressedRecently(InputFlags.SuperAttack, 8))
+            else if (InputH.PressedRecently(InputFlags.MediumAttack, 8))
+            {
+                switch (Location(config))
+                {
+                    case FighterLocation.Grounded:
+                        {
+                            Velocity = SVector2.zero;
+                            State = CharacterState.MediumAttack;
+                            StateStart = frame;
+                            StateEnd = StateStart + characterConfig.GetHitboxData(State).TotalTicks;
+                        }
+                        break;
+                }
+            }
+            else if (InputH.PressedRecently(InputFlags.HeavyAttack, 8))
             {
                 switch (Location(config))
                 {
@@ -278,12 +335,35 @@ namespace Game.Sim
             }
         }
 
-        public void ApplyHit(Frame frame, BoxProps props)
+        public HitOutcome ApplyHit(Frame frame, BoxProps props, CharacterConfig config, SVector2 location)
         {
             if (ImmunityEnd > frame)
             {
-                return;
+                return new HitOutcome { Kind = HitKind.None };
             }
+
+            HitProps = props;
+            HitLocation = location;
+
+            bool holdingBack =
+                FacingDir == FighterFacing.Left ? InputH.IsHeld(InputFlags.Right) : InputH.IsHeld(InputFlags.Left);
+            bool holdingDown = InputH.IsHeld(InputFlags.Down);
+
+            bool standBlock = props.AttackKind != AttackKind.Low;
+            bool crouchBlock = props.AttackKind != AttackKind.Overhead;
+            bool blockSuccess = holdingBack && ((holdingDown && crouchBlock) || (!holdingDown && standBlock));
+
+            if (blockSuccess)
+            {
+                // True: Crouch blocking, False: Stand blocking
+                State = holdingDown ? CharacterState.BlockCrouch : CharacterState.BlockStand;
+                StateStart = frame;
+                StateEnd = frame + props.BlockstunTicks + 1;
+                ImmunityEnd = frame + 7;
+                // TODO: check if other move is special, if so apply chip
+                return new HitOutcome { Kind = HitKind.Blocked };
+            }
+
             State = CharacterState.Hit;
             StateStart = frame;
             // Apply Hit/collision stuff is done after the player is actionable, so if the player needs to be
@@ -294,9 +374,13 @@ namespace Game.Sim
             // TODO: if high enough, go knockdown
             Health -= props.Damage;
 
+            Burst += props.Damage;
+            Burst = Mathsf.Clamp(Burst, sfloat.Zero, config.BurstMax);
+
             Velocity = props.Knockback;
 
             ComboedCount++;
+            return new HitOutcome { Kind = HitKind.Hit, Props = props };
         }
 
         public void ApplyClank(Frame frame, GlobalConfig config)

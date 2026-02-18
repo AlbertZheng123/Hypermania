@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Design;
 using Design.Animation;
@@ -21,6 +22,9 @@ namespace Game.Runners
         [SerializeField]
         protected bool _drawHitboxes;
 
+        [SerializeField]
+        protected ControlsConfig _controlsConfig;
+
         /// <summary>
         /// The current state of the runner. If you derive from this class, it must be initialized on Init();
         /// </summary>
@@ -40,16 +44,22 @@ namespace Game.Runners
             P2PClient client
         )
         {
-            // TODO: take in character selections from matchmaking/lobby
-            CharacterConfig sampleConfig = _config.Get(Character.SampleFighter);
-            _characters = new CharacterConfig[players.Count];
-            for (int i = 0; i < players.Count; i++)
+            if (players.Count != 2)
             {
-                _characters[i] = sampleConfig;
+                throw new InvalidOperationException("must get 2 players");
             }
-            _curState = GameState.Create(_characters);
-            _view.Init(_characters);
-            _inputBuffer = new InputBuffer();
+            // TODO: character select pass in chars here
+            // CharacterConfig sampleConfig = _config.CharacterConfig(Character.SampleFighter);
+            CharacterConfig nytheaConfig = _config.CharacterConfig(Character.Nythea);
+
+            _characters = new CharacterConfig[players.Count];
+            _characters[0] = nytheaConfig;
+            _characters[1] = nytheaConfig;
+            _curState = GameState.Create(_config, _characters);
+            _view.Init(_config, _characters);
+            if (_controlsConfig == null)
+                _controlsConfig = ScriptableObject.CreateInstance<ControlsConfig>();
+            _inputBuffer = new InputBuffer(_controlsConfig);
             _time = 0;
             _initialized = true;
         }

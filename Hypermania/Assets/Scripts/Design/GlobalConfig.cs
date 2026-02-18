@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Game;
 using UnityEngine;
+using Utils.EnumArray;
 using Utils.SoftFloat;
 
 namespace Design
@@ -12,20 +13,19 @@ namespace Design
         public sfloat GroundY = -3;
         public sfloat WallsX = 4;
         public int ClankTicks = 30;
+        public int RoundTimeTicks = 10800;
 
         [SerializeField]
-        private List<CharacterConfig> _configs;
+        private AudioConfig AudioConfig;
 
-        public CharacterConfig Get(Character character)
+        public AudioConfig Audio => AudioConfig;
+
+        [SerializeField]
+        private EnumArray<Character, CharacterConfig> _configs;
+
+        public CharacterConfig CharacterConfig(Character character)
         {
-            foreach (CharacterConfig config in _configs)
-            {
-                if (config.Character == character)
-                {
-                    return config;
-                }
-            }
-            return null;
+            return _configs[character];
         }
     }
 }
