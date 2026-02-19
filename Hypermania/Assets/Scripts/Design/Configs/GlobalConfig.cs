@@ -1,10 +1,9 @@
-using System.Collections.Generic;
 using Game;
 using UnityEngine;
 using Utils.EnumArray;
 using Utils.SoftFloat;
 
-namespace Design
+namespace Design.Configs
 {
     [CreateAssetMenu(menuName = "Hypermania/Global Config")]
     public class GlobalConfig : ScriptableObject

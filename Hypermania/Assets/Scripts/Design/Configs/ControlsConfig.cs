@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Utils.EnumArray;
 
-namespace Design
+namespace Design.Configs
 {
     [CreateAssetMenu(menuName = "Hypermania/Controls Config")]
     public class ControlsConfig : ScriptableObject

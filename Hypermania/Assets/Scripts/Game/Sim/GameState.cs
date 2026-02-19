@@ -2,12 +2,10 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-using Design;
 using Design.Animation;
+using Design.Configs;
 using MemoryPack;
 using Netcode.Rollback;
-using UnityEngine;
-using UnityEngine.UIElements;
 using Utils;
 using Utils.SoftFloat;
 
@@ -97,7 +95,7 @@ namespace Game.Sim
                 for (int i = 0; i < Fighters.Length; i++)
                 {
                     Fighters[i].Health = characters[i].Health;
-                    sfloat xPos = i - ((sfloat)characters.Length - 1) / 2;
+                    sfloat xPos = (i - ((sfloat)characters.Length - 1) / 2) * 4;
                     FighterFacing facing = xPos > 0 ? FighterFacing.Left : FighterFacing.Right;
                     Fighters[i].RoundReset(new SVector2(xPos, sfloat.Zero), facing, characters[i]);
                 }
@@ -295,7 +293,9 @@ namespace Game.Sim
                 collisions.Sort(
                     (a, b) =>
                     {
-                        return a.GetHashCode() - b.GetHashCode();
+                        if (a.Key.Item1 == b.Key.Item1)
+                            return a.Key.Item2 - b.Key.Item2;
+                        return a.Key.Item1 - b.Key.Item1;
                     }
                 );
 

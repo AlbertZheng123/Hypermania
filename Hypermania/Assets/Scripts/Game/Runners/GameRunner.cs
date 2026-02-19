@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Design;
 using Design.Animation;
+using Design.Configs;
 using Game.Sim;
 using Game.View;
 using Netcode.P2P;

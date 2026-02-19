@@ -5,7 +5,7 @@ using UnityEngine;
 using Utils.EnumArray;
 using Utils.SoftFloat;
 
-namespace Design
+namespace Design.Configs
 {
     [CreateAssetMenu(menuName = "Hypermania/Character Config")]
     public class CharacterConfig : ScriptableObject

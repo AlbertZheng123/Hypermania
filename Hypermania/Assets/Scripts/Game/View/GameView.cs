@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Design;
+using Design.Configs;
 using Game.Sim;
 using Game.View.Events;
 using Game.View.Events.Vfx;

@@ -1,7 +1,6 @@
 using System;
-using Design;
+using Design.Configs;
 using Game.Sim;
-using UnityEngine;
 using UnityEngine.InputSystem;
 using Utils.EnumArray;
 

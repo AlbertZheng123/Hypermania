@@ -1,9 +1,8 @@
-using Design;
+using Design.Configs;
 using Game.Sim;
 using Game.View.Events;
 using Game.View.Events.Vfx;
 using UnityEngine;
-using UnityEngine.VFX;
 using Utils;
 
 namespace Game.View.Fighters
