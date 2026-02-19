@@ -290,7 +290,16 @@ namespace Game.Sim
 
             if (PhysicsCtx.HurtHitCollisions.Count > 0)
             {
-                foreach ((var owners, var collision) in PhysicsCtx.HurtHitCollisions)
+                // sort for determinism
+                var collisions = PhysicsCtx.HurtHitCollisions.ToList();
+                collisions.Sort(
+                    (a, b) =>
+                    {
+                        return a.GetHashCode() - b.GetHashCode();
+                    }
+                );
+
+                foreach ((var owners, var collision) in collisions)
                 {
                     //owners[0] hits owners[1]
                     HitOutcome outcome = HandleCollision(collision, config, characters);
