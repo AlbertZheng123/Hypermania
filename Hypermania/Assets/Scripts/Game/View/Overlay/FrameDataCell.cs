@@ -16,14 +16,18 @@ namespace Game.View.Overlay
         [SerializeField]
         private Image _cellBackground;
 
+        public FrameType CurType { get; private set; } = FrameType.Neutral;
+
         public void SetType(Frame frame, in FighterState state, CharacterConfig characterConfig)
         {
             FrameData data = characterConfig.GetHitboxData(state.State).GetFrame(frame - state.StateStart);
-            SetType(data == null ? FrameType.Neutral : data.FrameType);
+            FrameType res = data == null ? FrameType.Neutral : data.FrameType;
+            SetType(res);
         }
 
         public void SetType(FrameType type)
         {
+            CurType = type;
             _cellBackground.color = _cellColors[type];
         }
     }

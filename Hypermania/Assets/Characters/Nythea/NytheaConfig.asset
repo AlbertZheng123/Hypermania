@@ -32,7 +32,7 @@ MonoBehaviour:
   NumAirDashes: 2
   Hitboxes:
     values:
-    - {fileID: 0}
+    - {fileID: 11400000, guid: b3afc991f416967e5b3e636cd58f772a, type: 2}
     - {fileID: 0}
     - {fileID: 0}
     - {fileID: 11400000, guid: 6935d7dcf4841d9cf948ff0efee3d2cb, type: 2}
