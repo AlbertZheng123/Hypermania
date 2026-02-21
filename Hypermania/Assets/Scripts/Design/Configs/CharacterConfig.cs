@@ -14,13 +14,16 @@ namespace Design.Configs
         public FighterView Prefab;
         public AnimatorOverrideController AnimationController;
         public sfloat CharacterHeight;
-        public sfloat Speed;
+        public sfloat ForwardSpeed;
+        public sfloat BackSpeed;
         public sfloat JumpVelocity;
         public sfloat Health;
         public sfloat BurstMax;
         public sfloat ForwardDashDistance;
         public sfloat BackDashDistance;
         public int NumAirDashes;
+        public sfloat ForwardAirDashDistance;
+        public sfloat BackAirDashDistance;
         public EnumArray<CharacterState, HitboxData> Hitboxes;
 
         public FrameData GetFrameData(CharacterState anim, int tick)

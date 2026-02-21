@@ -118,7 +118,7 @@ namespace Game.Sim
 
             for (int i = 0; i < Fighters.Length; i++)
             {
-                Fighters[i].DoFrameStart();
+                Fighters[i].DoFrameStart(config);
             }
 
             // Tick the state machine, making the character idle if an animation/stun finishes
