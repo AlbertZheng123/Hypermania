@@ -10,7 +10,8 @@ namespace Game.Runners
             {
                 return;
             }
-            if (Input.GetKeyDown(KeyCode.RightArrow)){
+            if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
                 GameLoop();
             }
         }
