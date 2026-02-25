@@ -13,10 +13,19 @@ namespace Design.Animation
     }
 
     [Serializable]
+    public enum AttackKind
+    {
+        Medium,
+        Overhead,
+        Low,
+    }
+
+    [Serializable]
     public struct BoxProps : IEquatable<BoxProps>
     {
         // NOTE: ensure that any new fields added above are added to the equals and hashcode implementation!!!
         public HitboxKind Kind;
+        public AttackKind AttackKind;
         public int Damage;
         public int HitstunTicks;
         public int BlockstunTicks;
@@ -25,6 +34,7 @@ namespace Design.Animation
 
         public bool Equals(BoxProps other) =>
             Kind == other.Kind
+            && AttackKind == other.AttackKind
             && HitstunTicks == other.HitstunTicks
             && Damage == other.Damage
             && BlockstunTicks == other.BlockstunTicks
@@ -34,7 +44,7 @@ namespace Design.Animation
         public override bool Equals(object obj) => obj is BoxProps other && Equals(other);
 
         public override int GetHashCode() =>
-            HashCode.Combine(Kind, HitstunTicks, Damage, BlockstunTicks, StartsRhythmCombo, Knockback);
+            HashCode.Combine(Kind, AttackKind, HitstunTicks, Damage, BlockstunTicks, StartsRhythmCombo, Knockback);
 
         public static bool operator ==(BoxProps a, BoxProps b) => a.Equals(b);
 
@@ -70,20 +80,22 @@ namespace Design.Animation
         public static bool operator !=(BoxData left, BoxData right) => !left.Equals(right);
     }
 
-    [Serializable]
-    public enum TickPhase
+    public enum FrameType
     {
+        Neutral,
         Startup,
         Active,
         Recovery,
+        Hitstun,
+        Blockstun,
     }
 
     [Serializable]
     public class FrameData
     {
         public List<BoxData> Boxes = new List<BoxData>();
+        public FrameType FrameType = FrameType.Neutral;
 
-        public TickPhase Phase = TickPhase.Startup; //Default phase should be startup
         public FrameData Clone()
         {
             var copy = new FrameData();
@@ -93,6 +105,7 @@ namespace Design.Animation
             else
                 copy.Boxes = new List<BoxData>();
 
+            copy.FrameType = FrameType;
             return copy;
         }
 
@@ -101,6 +114,7 @@ namespace Design.Animation
             Boxes.Clear();
             if (other?.Boxes != null)
                 Boxes.AddRange(other.Boxes);
+            FrameType = other.FrameType;
         }
 
         public override int GetHashCode()
@@ -111,6 +125,7 @@ namespace Design.Animation
             {
                 hc.Add(Boxes[j]);
             }
+            hc.Add(FrameType);
             return hc.ToHashCode();
         }
     }
@@ -137,10 +152,7 @@ namespace Design.Animation
 
         public FrameData GetFrame(int tick)
         {
-            if (tick < 0 || tick >= TotalTicks)
-            {
-                return null;
-            }
+            tick = Mathf.Clamp(tick, 0, TotalTicks - 1);
             return Frames[tick];
         }
 

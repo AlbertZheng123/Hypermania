@@ -28,6 +28,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -37,6 +38,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 1
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -51,6 +53,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -60,6 +63,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 1
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -74,6 +78,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -83,6 +88,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 1
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -97,6 +103,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -106,6 +113,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 1
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -120,6 +128,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -142,6 +151,7 @@ MonoBehaviour:
           rawValue: 1049521668
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -164,6 +174,7 @@ MonoBehaviour:
           rawValue: 1038937712
       Props:
         Kind: 1
+        AttackKind: 0
         Damage: 5
         HitstunTicks: 12
         BlockstunTicks: 0
@@ -173,6 +184,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 2
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -187,6 +199,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -209,6 +222,7 @@ MonoBehaviour:
           rawValue: 1049521668
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -231,6 +245,7 @@ MonoBehaviour:
           rawValue: 1038937712
       Props:
         Kind: 1
+        AttackKind: 0
         Damage: 5
         HitstunTicks: 12
         BlockstunTicks: 0
@@ -240,6 +255,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 2
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -254,6 +270,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -276,6 +293,7 @@ MonoBehaviour:
           rawValue: 1049521668
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -298,6 +316,7 @@ MonoBehaviour:
           rawValue: 1038937712
       Props:
         Kind: 1
+        AttackKind: 0
         Damage: 5
         HitstunTicks: 12
         BlockstunTicks: 0
@@ -307,6 +326,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 2
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -321,6 +341,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -343,6 +364,7 @@ MonoBehaviour:
           rawValue: 1049521668
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -365,6 +387,7 @@ MonoBehaviour:
           rawValue: 1038937712
       Props:
         Kind: 1
+        AttackKind: 0
         Damage: 5
         HitstunTicks: 12
         BlockstunTicks: 0
@@ -374,6 +397,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 2
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -388,6 +412,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -410,6 +435,7 @@ MonoBehaviour:
           rawValue: 1049521668
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -432,6 +458,7 @@ MonoBehaviour:
           rawValue: 1038937712
       Props:
         Kind: 1
+        AttackKind: 0
         Damage: 5
         HitstunTicks: 12
         BlockstunTicks: 0
@@ -441,6 +468,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 2
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -455,6 +483,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -464,6 +493,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 3
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -478,6 +508,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -487,6 +518,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 3
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -501,6 +533,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -510,6 +543,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 3
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -524,6 +558,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -533,6 +568,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 3
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -547,6 +583,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -556,6 +593,7 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 3
   - Boxes:
     - Name: Hurt
       CenterLocal:
@@ -570,6 +608,7 @@ MonoBehaviour:
           rawValue: 1069337494
       Props:
         Kind: 0
+        AttackKind: 0
         Damage: 0
         HitstunTicks: 0
         BlockstunTicks: 0
@@ -579,3 +618,4 @@ MonoBehaviour:
             rawValue: 1065353216
           y:
             rawValue: 0
+    FrameType: 3

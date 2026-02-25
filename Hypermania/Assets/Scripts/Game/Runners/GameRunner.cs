@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Design;
 using Design.Animation;
+using Design.Configs;
 using Game.Sim;
 using Game.View;
 using Netcode.P2P;
@@ -21,6 +21,9 @@ namespace Game.Runners
 
         [SerializeField]
         protected bool _drawHitboxes;
+
+        [SerializeField]
+        protected ControlsConfig _controlsConfig;
 
         /// <summary>
         /// The current state of the runner. If you derive from this class, it must be initialized on Init();
@@ -54,7 +57,9 @@ namespace Game.Runners
             _characters[1] = nytheaConfig;
             _curState = GameState.Create(_config, _characters);
             _view.Init(_config, _characters);
-            _inputBuffer = new InputBuffer();
+            if (_controlsConfig == null)
+                _controlsConfig = ScriptableObject.CreateInstance<ControlsConfig>();
+            _inputBuffer = new InputBuffer(_controlsConfig);
             _time = 0;
             _initialized = true;
         }

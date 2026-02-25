@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Design;
 using Game.Sim;
 using Game.View;
+using Game.View.Overlay;
 using Netcode.P2P;
 using Netcode.Rollback;
 using Netcode.Rollback.Sessions;
@@ -142,7 +143,7 @@ namespace Game.Runners
                 }
             }
 
-            if (_session.ConfirmedState().FightersDead())
+            if (_session.ConfirmedFrame() != Frame.NullFrame && _session.ConfirmedState().FightersDead())
             {
                 DeInit();
                 return;

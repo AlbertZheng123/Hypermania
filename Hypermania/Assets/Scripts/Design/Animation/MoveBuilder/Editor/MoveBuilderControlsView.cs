@@ -159,6 +159,9 @@ namespace Design.Animation.MoveBuilder.Editors
                 if (GUILayout.Button("Paste Frame (Ctrl Shift V)"))
                     m.PasteFrameDataToCurrentFrame();
             }
+
+            EditorGUILayout.Space(6);
+            frame.FrameType = (FrameType)EditorGUILayout.EnumPopup("Frame Type", frame.FrameType);
         }
 
         private void DrawBoxList(MoveBuilderModel m)

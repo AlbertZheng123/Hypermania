@@ -1,13 +1,14 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using Design;
 using Design.Animation;
+using Design.Configs;
+using Game.View.Overlay;
 using MemoryPack;
 using Netcode.Rollback;
 using UnityEngine;
-using UnityEngine.UIElements;
 using Utils;
 using Utils.SoftFloat;
 
@@ -17,7 +18,8 @@ namespace Game.Sim
     {
         Fighting,
         Mania,
-        Starting,
+        RoundEnd, // Used to be roundStart, indicates the end of a round
+        Countdown, // Countdown to round.
     }
 
     [MemoryPackable]
@@ -42,6 +44,7 @@ namespace Game.Sim
         public const int MAX_COLLIDERS = 100;
 
         public Frame Frame;
+        public Frame RoundStart; // Added to indicate when a round starts.
         public Frame RoundEnd;
         public FighterState[] Fighters;
         public ManiaState[] Manias;
@@ -58,25 +61,53 @@ namespace Game.Sim
         {
             GameState state = new GameState();
             state.Frame = Frame.FirstFrame;
+            state.RoundStart = Frame.FirstFrame;
             state.RoundEnd = new Frame(config.RoundTimeTicks);
             state.Fighters = new FighterState[characters.Length];
             state.Manias = new ManiaState[characters.Length];
-            state.GameMode = GameMode.Fighting;
+            state.GameMode = GameMode.Countdown;
             for (int i = 0; i < characters.Length; i++)
             {
-                sfloat xPos = i - ((sfloat)characters.Length - 1) / 2;
+                sfloat xPos = (i - ((sfloat)characters.Length - 1) / 2) * 4;
                 FighterFacing facing = xPos > 0 ? FighterFacing.Left : FighterFacing.Right;
                 state.Fighters[i] = FighterState.Create(new SVector2(xPos, sfloat.Zero), facing, characters[i], 3);
                 state.Manias[i] = ManiaState.Create(
                     new ManiaConfig
                     {
                         NumKeys = 4,
-                        HitHalfRange = 8,
-                        MissHalfRange = 6,
+                        HitHalfRange = config.Input.BeatCancelWindow,
+                        MissHalfRange = config.Input.BeatCancelWindow + 3,
                     }
                 );
             }
             return state;
+        }
+
+        private void DoRoundEnd(CharacterConfig[] characters, Span<GameInput> outInputs)
+        {
+            for (int i = 0; i < Fighters.Length; i++)
+            {
+                Fighters[i].Health = characters[i].Health;
+                sfloat xPos = (i - ((sfloat)characters.Length - 1) / 2) * 4;
+                FighterFacing facing = xPos > 0 ? FighterFacing.Left : FighterFacing.Right;
+                Fighters[i].RoundReset(new SVector2(xPos, sfloat.Zero), facing, characters[i]);
+                outInputs[i] = GameInput.None;
+            }
+            RoundStart = Frame;
+            GameMode = GameMode.Countdown;
+        }
+
+        private void DoCountdown(GlobalConfig config, Span<GameInput> outInputs)
+        {
+            if (Frame - RoundStart >= config.RoundCountdownTicks) // Added an attribute to config for countdown.
+            {
+                GameMode = GameMode.Fighting;
+                RoundEnd = Frame + config.RoundTimeTicks;
+            }
+            for (int i = 0; i < Fighters.Length; i++)
+            {
+                outInputs[i] = GameInput.None;
+            }
         }
 
         public void Advance(
@@ -91,36 +122,36 @@ namespace Game.Sim
             }
             Frame += 1;
 
-            // Reset positions and state for a new round.
-            if (GameMode == GameMode.Starting)
+            Span<GameInput> remapInputs = stackalloc GameInput[Fighters.Length];
+            if (GameMode == GameMode.RoundEnd)
+            {
+                DoRoundEnd(characters, remapInputs);
+            }
+            else if (GameMode == GameMode.Countdown)
+            {
+                DoCountdown(config, remapInputs);
+            }
+            else if (GameMode == GameMode.Mania)
+            {
+                DoManiaStep(inputs, remapInputs);
+            }
+            else if (GameMode == GameMode.Fighting)
             {
                 for (int i = 0; i < Fighters.Length; i++)
                 {
-                    Fighters[i].Health = characters[i].Health;
-                    sfloat xPos = i - ((sfloat)characters.Length - 1) / 2;
-                    FighterFacing facing = xPos > 0 ? FighterFacing.Left : FighterFacing.Right;
-                    Fighters[i].RoundReset(new SVector2(xPos, sfloat.Zero), facing, characters[i]);
+                    remapInputs[i] = inputs[i].input;
                 }
-                GameMode = GameMode.Fighting;
-                RoundEnd = Frame + config.RoundTimeTicks;
             }
 
             // Push the current input into the input history, to read for buffering.
             for (int i = 0; i < Fighters.Length; i++)
             {
-                if (GameMode == GameMode.Fighting)
-                {
-                    Fighters[i].InputH.PushInput(inputs[i].input);
-                }
-                else
-                {
-                    Fighters[i].InputH.PushInput(GameInput.None);
-                }
+                Fighters[i].InputH.PushInput(remapInputs[i]);
             }
 
             for (int i = 0; i < Fighters.Length; i++)
             {
-                Fighters[i].DoFrameStart();
+                Fighters[i].DoFrameStart(config);
             }
 
             // Tick the state machine, making the character idle if an animation/stun finishes
@@ -132,18 +163,13 @@ namespace Game.Sim
             // This function internally appies changes to the fighter's velocity based on movement inputs
             for (int i = 0; i < Fighters.Length; i++)
             {
-                Fighters[i].ApplyMovementIntent(Frame, characters[i], config);
+                Fighters[i].ApplyMovementState(Frame, characters[i], config);
             }
 
             // If a player applies inputs to start a state at the start of the frame, we should apply those immediately
             for (int i = 0; i < Fighters.Length; i++)
             {
                 Fighters[i].ApplyActiveState(Frame, characters[i], config);
-            }
-
-            if (GameMode == GameMode.Mania)
-            {
-                DoManiaStep(inputs);
             }
 
             DoCollisionStep(characters, config);
@@ -172,7 +198,18 @@ namespace Game.Sim
                         return;
                     }
 
-                    GameMode = GameMode.Starting;
+                    // Decide what victory indicator to give.
+                    if (Fighters[1 - i].Health == characters[i].Health)
+                    {
+                        Fighters[1 - i].Victories[Fighters[1 - i].amountVictories] = VictoryKind.Perfect;
+                    }
+                    else
+                    {
+                        Fighters[1 - i].Victories[Fighters[1 - i].amountVictories] = VictoryKind.Normal;
+                    }
+
+                    Fighters[1 - i].amountVictories++;
+                    GameMode = GameMode.RoundEnd;
                     // Ensure that if the player died to a mania attack it ends immediately
                     for (int j = 0; j < Manias.Length; j++)
                     {
@@ -198,11 +235,6 @@ namespace Game.Sim
             {
                 Fighters[i].FaceTowards(Fighters[i ^ 1].Position);
             }
-            // Apply and change the state that derives only from passive factors (movements, etc)
-            for (int i = 0; i < Fighters.Length; i++)
-            {
-                Fighters[i].ApplyMovementState(Frame, config);
-            }
         }
 
         public bool FightersDead()
@@ -217,13 +249,12 @@ namespace Game.Sim
             return false;
         }
 
-        private void DoManiaStep((GameInput input, InputStatus status)[] inputs)
+        private void DoManiaStep((GameInput input, InputStatus status)[] inputs, Span<GameInput> outInputs)
         {
             for (int i = 0; i < Manias.Length; i++)
             {
                 List<ManiaEvent> maniaEvents = new List<ManiaEvent>();
                 Manias[i].Tick(Frame, inputs[i].input, maniaEvents);
-                // TODO: make note hits do something to the character here
 
                 foreach (ManiaEvent ev in maniaEvents)
                 {
@@ -231,6 +262,9 @@ namespace Game.Sim
                     {
                         case ManiaEventKind.End:
                             GameMode = GameMode.Fighting;
+                            break;
+                        case ManiaEventKind.Hit:
+                            outInputs[i].Flags |= ev.Note.HitInput;
                             break;
                     }
                 }
@@ -290,17 +324,28 @@ namespace Game.Sim
 
             if (PhysicsCtx.HurtHitCollisions.Count > 0)
             {
-                foreach ((var owners, var collision) in PhysicsCtx.HurtHitCollisions)
+                // sort for determinism
+                var collisions = PhysicsCtx.HurtHitCollisions.ToList();
+                collisions.Sort(
+                    (a, b) =>
+                    {
+                        if (a.Key.Item1 == b.Key.Item1)
+                            return a.Key.Item2 - b.Key.Item2;
+                        return a.Key.Item1 - b.Key.Item1;
+                    }
+                );
+
+                foreach ((var owners, var collision) in collisions)
                 {
                     //owners[0] hits owners[1]
-                    HandleCollision(collision, config, characters);
-
+                    HitOutcome outcome = HandleCollision(collision, config, characters);
                     var attackerBox = collision.BoxA.Owner == owners.Item1 ? collision.BoxA : collision.BoxB;
                     //to start a rhythm combo, we must sure that the move was not traded
                     if (
                         attackerBox.Data.StartsRhythmCombo
                         && !PhysicsCtx.HurtHitCollisions.ContainsKey((owners.Item2, owners.Item1))
                         && GameMode == GameMode.Fighting
+                        && outcome.Kind == HitKind.Hit
                     )
                     {
                         Frame baseSt = Frame + 10;
@@ -308,8 +353,17 @@ namespace Game.Sim
 
                         for (int i = 0; i < 16; i++)
                         {
-                            Manias[owners.Item1].QueueNote(i % 4, new ManiaNote { Length = 0, Tick = nextBeat });
-                            nextBeat = config.Audio.NextBeat(nextBeat + 1, AudioConfig.BeatSubdivision.EighthNote);
+                            Manias[owners.Item1]
+                                .QueueNote(
+                                    i % 4,
+                                    new ManiaNote
+                                    {
+                                        Length = 0,
+                                        Tick = nextBeat,
+                                        HitInput = InputFlags.MediumAttack,
+                                    }
+                                );
+                            nextBeat = config.Audio.NextBeat(nextBeat + 1, AudioConfig.BeatSubdivision.QuarterNote);
                         }
                         Manias[owners.Item1].Enable(nextBeat);
                         GameMode = GameMode.Mania;
@@ -330,15 +384,31 @@ namespace Game.Sim
             PhysicsCtx.Clear();
         }
 
-        private void HandleCollision(Physics<BoxProps>.Collision c, GlobalConfig config, CharacterConfig[] characters)
+        private HitOutcome HandleCollision(
+            Physics<BoxProps>.Collision c,
+            GlobalConfig config,
+            CharacterConfig[] characters
+        )
         {
             if (c.BoxA.Data.Kind == HitboxKind.Hitbox && c.BoxB.Data.Kind == HitboxKind.Hurtbox)
             {
-                Fighters[c.BoxB.Owner].ApplyHit(Frame, c.BoxA.Data, characters[c.BoxB.Owner]);
+                return Fighters[c.BoxB.Owner]
+                    .ApplyHit(
+                        Frame,
+                        c.BoxA.Data,
+                        characters[c.BoxB.Owner],
+                        c.BoxB.Box.ClosestPointToCenter(c.BoxA.Box)
+                    );
             }
             else if (c.BoxA.Data.Kind == HitboxKind.Hurtbox && c.BoxB.Data.Kind == HitboxKind.Hitbox)
             {
-                Fighters[c.BoxA.Owner].ApplyHit(Frame, c.BoxB.Data, characters[c.BoxA.Owner]);
+                return Fighters[c.BoxA.Owner]
+                    .ApplyHit(
+                        Frame,
+                        c.BoxB.Data,
+                        characters[c.BoxA.Owner],
+                        c.BoxA.Box.ClosestPointToCenter(c.BoxB.Box)
+                    );
             }
             else if (c.BoxA.Data.Kind == HitboxKind.Hitbox && c.BoxB.Data.Kind == HitboxKind.Hitbox)
             {
@@ -348,19 +418,25 @@ namespace Game.Sim
             }
             else if (c.BoxA.Data.Kind == HitboxKind.Hurtbox && c.BoxB.Data.Kind == HitboxKind.Hurtbox)
             {
-                // TODO: more advanced pushing/hitbox handling, e.g. if someone airborne they shouldn't be able to be
-                // pushed
+                sfloat aPushFactor =
+                    Fighters[c.BoxA.Owner].Location(config) == FighterLocation.Grounded ? (sfloat)1f : (sfloat)0.1f;
+                sfloat bPushFactor =
+                    Fighters[c.BoxB.Owner].Location(config) == FighterLocation.Grounded ? (sfloat)1f : (sfloat)0.1f;
+
+                sfloat aPush = aPushFactor / (aPushFactor + bPushFactor);
+                sfloat bPush = bPushFactor / (aPushFactor + bPushFactor);
                 if (c.BoxA.Box.Pos.x < c.BoxB.Box.Pos.x)
                 {
-                    Fighters[c.BoxA.Owner].Position.x -= c.OverlapX / 2;
-                    Fighters[c.BoxB.Owner].Position.x += c.OverlapX / 2;
+                    Fighters[c.BoxA.Owner].Position.x -= c.OverlapX * aPush;
+                    Fighters[c.BoxB.Owner].Position.x += c.OverlapX * bPush;
                 }
                 else
                 {
-                    Fighters[c.BoxA.Owner].Position.x += c.OverlapX / 2;
-                    Fighters[c.BoxB.Owner].Position.x -= c.OverlapX / 2;
+                    Fighters[c.BoxA.Owner].Position.x += c.OverlapX * aPush;
+                    Fighters[c.BoxB.Owner].Position.x -= c.OverlapX * bPush;
                 }
             }
+            return new HitOutcome { Kind = HitKind.None };
         }
 
         [ThreadStatic]
